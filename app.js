@@ -12,53 +12,80 @@ if (Notification.permission !== "granted") {
     Notification.requestPermission();
 }
 
+// --- MEJORA 1: REGEX FLEXIBLE ---
 addBtn.addEventListener('click', () => {
     const value = taskInput.value;
     if (!value) return;
 
-    const timeRegex = /\b(\d{1,2}:\d{2})(?:\s*(am|pm))?\b/i;
+    // Detecta: 18:00, 6:00pm, 6pm, 06:30 AM
+    const timeRegex = /\b(\d{1,2}(?::\d{2})?)\s*(am|pm)?\b/i;
     const match = value.match(timeRegex);
 
     if (match) {
-        let fullTime = match[1]; // Extraer HH:MM
-        
-        // PARCHE TÉCNICO: Normalizar a HH:MM (añadir cero si falta)
-        const [horas, minutos] = fullTime.split(':');
-        fullTime = `${horas.padStart(2, '0')}:${minutos.padStart(2, '0')}`;
+        let rawTime = match[1];
+        let period = match[2]; // am o pm
 
-        const taskText = value.replace(match[0], '').trim();
+        // Normalización de hora (Ej: "6" -> "06:00", "6pm" -> "18:00")
+        let [horas, minutos] = rawTime.includes(':') ? rawTime.split(':') : [rawTime, "00"];
+        horas = parseInt(horas);
+
+        if (period) {
+            if (period.toLowerCase() === 'pm' && horas < 12) horas += 12;
+            if (period.toLowerCase() === 'am' && horas === 12) horas = 0;
+        }
         
-        const newReminder = {
+        const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.padStart(2, '0')}`;
+        const taskText = value.replace(match[0], '').trim();
+
+        saveReminder({
             id: Date.now(),
             text: taskText || "Recordatorio",
             time: fullTime,
             notified: false
-        };
-
-        saveReminder(newReminder);
+        });
+        
         renderReminders();
         taskInput.value = '';
+        taskInput.classList.remove('input-error');
     } else {
-        alert("Pon la hora así: 18:30");
+        // Feedback visual de error
+        taskInput.classList.add('input-error');
+        setTimeout(() => taskInput.classList.remove('input-error'), 3000);
     }
 });
 
-function saveReminder(reminder) {
-    const list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    list.push(reminder);
-    localStorage.setItem('reminders', JSON.stringify(list));
-}
-
+// --- MEJORA 2: RENDERIZADO CON URGENCIA ---
 function renderReminders() {
     const list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    reminderList.innerHTML = list.map(r => `
-        <div class="reminder-card">
-            <div><strong>${r.time}</strong> - ${r.text}</div>
-            <button onclick="deleteReminder(${r.id})">✕</button>
-        </div>
-    `).join('');
+    const ahora = new Date();
+    const horaActualStr = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    reminderList.innerHTML = list.map(r => {
+        // Lógica de color por proximidad
+        let urgencyClass = '';
+        const diff = calcularDiferenciaMinutos(horaActualStr, r.time);
+        
+        if (diff > 0 && diff <= 10) urgencyClass = 'urgent';
+        else if (diff > 0 && diff <= 60) urgencyClass = 'soon';
+
+        return `
+            <div class="reminder-card ${urgencyClass}">
+                <div>
+                    <span class="time-badge">${r.time}</span>
+                    <span>${r.text}</span>
+                </div>
+                <button onclick="deleteReminder(${r.id})">✕</button>
+            </div>
+        `;
+    }).join('');
 }
 
+// Función auxiliar para calcular urgencia
+function calcularDiferenciaMinutos(h1, h2) {
+    const [hor1, min1] = h1.split(':').map(Number);
+    const [hor2, min2] = h2.split(':').map(Number);
+    return (hor2 * 60 + min2) - (hor1 * 60 + min1);
+}
 window.deleteReminder = (id) => {
     let list = JSON.parse(localStorage.getItem('reminders') || '[]');
     list = list.filter(r => r.id !== id);

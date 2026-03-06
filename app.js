@@ -17,24 +17,22 @@ addBtn.addEventListener('click', () => {
     const value = taskInput.value;
     if (!value) return;
 
-    // Detecta: 18:00, 6:00pm, 6pm, 06:30 AM
-    const timeRegex = /\b(\d{1,2}(?::\d{2})?)\s*(am|pm)?\b/i;
+    // Detecta: 18:00, 6:00pm, 6pm, 06:30 AM, 6.30 pm, 6 p.m.
+    const timeRegex = /\b(\d{1,2})(?:[:.](\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\b/i;
     const match = value.match(timeRegex);
 
     if (match) {
-        let rawTime = match[1];
-        let period = match[2]; // am o pm
-
-        // Normalización de hora (Ej: "6" -> "06:00", "6pm" -> "18:00")
-        let [horas, minutos] = rawTime.includes(':') ? rawTime.split(':') : [rawTime, "00"];
-        horas = parseInt(horas);
+        let horas = parseInt(match[1]);
+        let minutos = match[2] || "00";
+        let period = match[3]; // am o pm
 
         if (period) {
-            if (period.toLowerCase() === 'pm' && horas < 12) horas += 12;
-            if (period.toLowerCase() === 'am' && horas === 12) horas = 0;
+            period = period.toLowerCase().replace(/\./g, ''); // Normaliza p.m. a pm
+            if (period === 'pm' && horas < 12) horas += 12;
+            if (period === 'am' && horas === 12) horas = 0;
         }
         
-        const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.padStart(2, '0')}`;
+        const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
         const taskText = value.replace(match[0], '').trim();
 
         saveReminder({
@@ -53,6 +51,12 @@ addBtn.addEventListener('click', () => {
         setTimeout(() => taskInput.classList.remove('input-error'), 3000);
     }
 });
+
+function saveReminder(reminder) {
+    const list = JSON.parse(localStorage.getItem('reminders') || '[]');
+    list.push(reminder);
+    localStorage.setItem('reminders', JSON.stringify(list));
+}
 
 // --- MEJORA 2: RENDERIZADO CON URGENCIA ---
 function renderReminders() {

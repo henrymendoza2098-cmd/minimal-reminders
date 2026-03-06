@@ -13,3 +13,12 @@ self.addEventListener('message', (event) => {
         });
     }
 });
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
+// Este archivo permite que las notificaciones se muestren fuera de la pestaña

@@ -22,3 +22,18 @@ self.addEventListener('activate', (event) => {
 });
 
 // Este archivo permite que las notificaciones se muestren fuera de la pestaña
+self.addEventListener('notificationclick', (event) => {
+    const id = event.notification.data.reminderId;
+    const text = event.notification.data.text;
+    event.notification.close();
+
+    if (event.action === 'snooze') {
+        // Lógica de Posponer: Enviamos mensaje a la app para reprogramar
+        self.clients.matchAll().then(clients => {
+            clients.forEach(client => client.postMessage({ type: 'SNOOZE', id: id }));
+        });
+    } else {
+        // Botón "Hecho" o clic normal: Solo cerramos (el vigilante ya lo marcó como notificado)
+        console.log("Tarea completada");
+    }
+});

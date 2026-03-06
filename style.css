@@ -1,0 +1,59 @@
+:root {
+    --bg: #121212;
+    --card: #1e1e1e;
+    --text: #ffffff;
+    --accent: #bb86fc;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.container {
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: var(--card);
+    color: white;
+    font-size: 16px;
+}
+
+button {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--accent);
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reminder-card {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid var(--accent);
+}

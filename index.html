@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Recordar 📝</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+    <main class="container">
+        <h1>Recordatorio Rápido</h1>
+        
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Ej: Llamar a mamá 18:00" autocomplete="off">
+            <button id="addBtn">Fijar</button>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <section id="reminderList">
+            </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

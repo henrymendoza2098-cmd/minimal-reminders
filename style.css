@@ -123,8 +123,9 @@ body.light-mode {
 .progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--accent), #03dac6);
-    transition: width 0.5s ease-in-out;
+    background-color: #ff5252; /* Rojo por defecto (0%) */
+    /* La magia visual: anima el ancho y el color al mismo tiempo */
+    transition: width 0.5s ease-in-out, background 0.5s ease;
 }
 #progressText {
     position: absolute;
@@ -162,4 +163,45 @@ h3 {
     margin-bottom: 15px;
     border-bottom: 1px solid #333;
     padding-bottom: 5px;
+}
+#resetDayBtn:hover {
+    background: rgba(255, 82, 82, 0.1) !important;
+}
+/* --- ESTILO DEL BOTÓN REINICIAR --- */
+.btn-reset {
+    background: rgba(255, 82, 82, 0.05); /* Fondo rojo casi transparente */
+    color: #ff5252;
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    padding: 8px 18px;
+    border-radius: 20px; /* Forma de píldora */
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    display: inline-flex; /* Alinea perfectamente el icono y el texto */
+    align-items: center;
+    gap: 8px; /* Espacio entre el icono y la letra */
+    margin: 10px 0 25px 0;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Transición súper suave */
+}
+
+/* Efecto al pasar el ratón (Hover) */
+.btn-reset:hover {
+    background: #ff5252;
+    color: #ffffff;
+    border-color: #ff5252;
+    transform: translateY(-2px); /* Se eleva un poquito */
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3); /* Brillo rojo suave */
+}
+
+/* Efecto al hacer clic (Active) */
+.btn-reset:active {
+    transform: translateY(1px); /* Se hunde al presionarlo */
+    box-shadow: 0 2px 6px rgba(255, 82, 82, 0.2);
+}
+
+/* Animación de giro para el icono al pasar el ratón */
+.btn-reset:hover .icon {
+    transform: rotate(180deg);
+    transition: transform 0.4s ease;
+    display: inline-block;
 }

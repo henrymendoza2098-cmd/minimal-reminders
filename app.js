@@ -41,6 +41,7 @@ addBtn.addEventListener('click', () => {
 });
 
 // 5. PROCESAR ALARMAS
+// 5. PROCESAR ALARMAS (Con tu filtro anti-duplicados)
 function procesarAlarma(value, match) {
     let horas = parseInt(match[1]);
     let minutos = match[2] ? parseInt(match[2]) : 0;
@@ -50,31 +51,48 @@ function procesarAlarma(value, match) {
     else if (periodo === 'am' && horas === 12) horas = 0;
 
     const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-    let text = value.replace(match[0], '').trim() || "Recordatorio";
+    let text = value.replace(match[0], '').trim();
+
+    // --- EL FILTRO INTELIGENTE QUE HABÍAS CREADO ---
+    if (text.startsWith(selectedEmoji)) {
+        text = text.substring(selectedEmoji.length).trim();
+    }
+    if (!text) text = "Recordatorio";
 
     let list = JSON.parse(localStorage.getItem('reminders') || '[]');
 
     if (editId !== null) {
-        // ACTUALIZAR EXISTENTE
         list = list.map(r => r.id === editId ? { ...r, text, time: fullTime, emoji: selectedEmoji } : r);
     } else {
-        // CREAR NUEVO
         list.push({ id: Date.now(), text, time: fullTime, emoji: selectedEmoji, notified: false });
     }
     localStorage.setItem('reminders', JSON.stringify(list));
 }
 
-// 6. PROCESAR TAREAS
+// 6. PROCESAR TAREAS (Con tu filtro anti-duplicados)
 function procesarTarea(value) {
-    const list = JSON.parse(localStorage.getItem('tasks') || '[]');
-    list.push({ id: Date.now(), text: value, emoji: selectedEmoji, completed: false });
-    localStorage.setItem('tasks', JSON.stringify(list));
-    
-    // Actualizar barra de progreso
-    let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
-    localStorage.setItem('totalCreatedToday', total + 1);
-}
+    let text = value.trim();
 
+    // --- APLICAMOS EL MISMO FILTRO AQUÍ ---
+    if (text.startsWith(selectedEmoji)) {
+        text = text.substring(selectedEmoji.length).trim();
+    }
+    if (!text) text = "Nueva tarea";
+
+    let list = JSON.parse(localStorage.getItem('tasks') || '[]');
+    
+    // Bonus: Ahora también puedes editar las tareas sin hora
+    if (editId !== null) {
+        list = list.map(t => t.id === editId ? { ...t, text, emoji: selectedEmoji } : t);
+    } else {
+        list.push({ id: Date.now(), text, emoji: selectedEmoji, completed: false });
+        
+        let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+        localStorage.setItem('totalCreatedToday', total + 1);
+    }
+    
+    localStorage.setItem('tasks', JSON.stringify(list));
+}
 // 7. RENDERIZADO GENERAL
 function renderAll() {
     renderList('reminders', 'reminderList', true);
@@ -229,14 +247,32 @@ function handleGesture(e, id) {
         </div>
         `;
     }).join('');
-    function updateProgress() {
-    const totalHoy = parseInt(localStorage.getItem('totalCreatedToday') || 0);
-    const completadas = parseInt(localStorage.getItem('completedToday') || 0);
+   // 9. BARRA DE PROGRESO DINÁMICA
+// 9. BARRA DE PROGRESO DINÁMICA (Corregida)
+function updateProgress() {
+    const total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+    const done = parseInt(localStorage.getItem('completedToday') || 0);
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
     
-    const porcentaje = totalHoy === 0 ? 0 : Math.round((completadas / totalHoy) * 100);
-    
-    document.getElementById('progressBar').style.width = porcentaje + "%";
-    document.getElementById('progressText').innerText = `${porcentaje}% completado (${completadas}/${totalHoy})`;
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    progressBar.style.width = percent + "%";
+    progressText.innerText = `${percent}% completado (${done}/${total})`;
+
+    // Usamos 'background' a secas para aplastar cualquier degradado previo del CSS
+    if (percent === 0) {
+        progressBar.style.background = "transparent";
+    } else if (percent < 40) {
+        progressBar.style.background = "#ff5252"; // Rojo
+        progressText.style.color = "white";
+    } else if (percent < 80) {
+        progressBar.style.background = "#ffd740"; // Amarillo
+        progressText.style.color = "black";
+    } else {
+        progressBar.style.background = "#00e676"; // Verde
+        progressText.style.color = "black";
+    }
 }
 
 // Llama a updateProgress() al final de renderReminders
@@ -270,7 +306,12 @@ setInterval(() => {
     let huboCambios = false;
 
     lista.forEach(r => {
-        if (r.time === horaActual && !r.notified) {
+        // Convertimos las horas a minutos para poder comparar matemáticamente
+        const [hActual, mActual] = horaActual.split(':').map(Number);
+        const [hReminder, mReminder] = r.time.split(':').map(Number);
+        
+        // Si la hora actual es MAYOR o IGUAL a la del recordatorio (y no se ha notificado)
+        if ((hActual * 60 + mActual) >= (hReminder * 60 + mReminder) && !r.notified) {
             // DISPARAR NOTIFICACIÓN DESDE EL SERVICE WORKER
             navigator.serviceWorker.ready.then(reg => {
               // Dentro del navigator.serviceWorker.ready.then...
@@ -410,4 +451,21 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
         taskInput.value = (taskInput.value.replace(/\d{1,2}:\d{2}/, '').trim() + " " + horaCalculada).trim();
         taskInput.focus();
     });
+});
+// --- BOTÓN DE RESETEO DIARIO ---
+document.getElementById('resetDayBtn').addEventListener('click', () => {
+    // Pedimos confirmación antes de borrar
+    const seguro = confirm("¿Quieres reiniciar la barra a 0% y borrar las tareas de hoy?");
+    
+    if (seguro) {
+        // 1. Ponemos los contadores a cero
+        localStorage.setItem('totalCreatedToday', 0);
+        localStorage.setItem('completedToday', 0);
+        
+        // 2. Limpiamos la lista de tareas (opcional, pero recomendado al reiniciar)
+        localStorage.setItem('tasks', '[]');
+        
+        // 3. Refrescamos la pantalla para que la barra y las listas se actualicen
+        renderAll();
+    }
 });

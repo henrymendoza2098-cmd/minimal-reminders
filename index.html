@@ -8,14 +8,45 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
+    <button id="themeToggle" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 20px; cursor: pointer;">🌓</button>
 
     <main class="container">
+        <div class="progress-container">
+    <div id="progressBar" class="progress-bar"></div>
+    <span id="progressText">0% completado</span>
+</div>
         <h1>Recordatorio Rápido</h1>
         
+        <div class="categories">
+    <span class="cat-chip" data-emoji="📚">📚</span>
+    <span class="cat-chip" data-emoji="💊">💊</span>
+    <span class="cat-chip" data-emoji="🛒">🛒</span>
+    <span class="cat-chip" data-emoji="🎯">🎯</span>
+</div>
         <div class="input-group">
+            
             <input type="text" id="taskInput" placeholder="Ej: Llamar a mamá 18:00" autocomplete="off">
+            
+       
             <button id="addBtn">Fijar</button>
+            <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
         </div>
+        <div class="presets">
+    <button type="button" class="preset-btn" data-min="15">+15 min</button>
+    <button type="button" class="preset-btn" data-min="60">+1 hora</button>
+    <button type="button" class="preset-btn" data-min="1440">Mañana</button>
+</div>
+<div class="dashboard">
+        <section class="panel">
+            <h3>🔔 Próximas Alarmas</h3>
+            <div id="reminderList" class="list-container"></div>
+        </section>
+
+        <section class="panel">
+            <h3>✅ Tareas del Día</h3>
+            <div id="taskList" class="list-container"></div>
+        </section>
+    </div>
 
         <div id="statusMessage"></div>
 

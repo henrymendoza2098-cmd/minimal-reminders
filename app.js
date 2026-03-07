@@ -1,77 +1,167 @@
-let editId = null; // Para saber qué recordatorio estamos editando
+// 1. VARIABLES GLOBALES Y ESTADO
+let editId = null; 
+let selectedEmoji = "📝"; 
 const taskInput = document.getElementById('taskInput');
 const addBtn = document.getElementById('addBtn');
-const reminderList = document.getElementById('reminderList');
+const cancelBtn = document.getElementById('cancelBtn');
 
-// Registrar Service Worker y pedir permisos
+// 2. INICIO Y REGISTRO
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-        .then(() => console.log("Service Worker Activo"));
+    navigator.serviceWorker.register('sw.js').then(() => console.log("SW Activo"));
 }
 
-if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-}
+// 3. CATEGORÍAS (EMOJIS)
+document.querySelectorAll('.cat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedEmoji = chip.dataset.emoji;
+    });
+});
 
-// --- MEJORA 1: REGEX FLEXIBLE ---
+// 4. LÓGICA PRINCIPAL: EL BOTÓN "FIJAR"
 addBtn.addEventListener('click', () => {
     const value = taskInput.value.trim();
     if (!value) return;
 
-    // Regex para extraer la hora
+    // Buscamos si hay una hora (HH:MM am/pm)
     const timeRegex = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i;
     const match = value.match(timeRegex);
 
     if (match) {
-        // --- NORMALIZACIÓN DE HORA ---
-        let horas = parseInt(match[1]);
-        let minutos = match[2] ? parseInt(match[2]) : 0;
-        let periodo = match[3] ? match[3].toLowerCase() : null;
-
-        if (periodo === 'pm' && horas < 12) horas += 12;
-        else if (periodo === 'am' && horas === 12) horas = 0;
-
-        const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
-        const taskText = value.replace(match[0], '').trim() || "Recordatorio";
-
-        // --- LÓGICA DE GUARDADO (EL FILTRO) ---
-        let list = JSON.parse(localStorage.getItem('reminders') || '[]');
-
-        if (editId !== null) {
-            // MODO EDICIÓN: Buscamos el ID existente y lo actualizamos
-            list = list.map(r => 
-                r.id === editId ? { ...r, text: taskText, time: fullTime, notified: false } : r
-            );
-            console.log("Editado correctamente");
-            
-            // Resetear estado de edición
-            editId = null;
-            addBtn.innerText = "Fijar";
-            addBtn.style.backgroundColor = ""; // Vuelve al color original
-        } else {
-            // MODO CREACIÓN: Creamos uno totalmente nuevo
-            const newReminder = {
-                id: Date.now(),
-                text: taskText,
-                time: fullTime,
-                notified: false
-            };
-            list.push(newReminder);
-            console.log("Creado nuevo");
-        }
-
-        // Guardar la lista actualizada (ya sea con el editado o el nuevo)
-        localStorage.setItem('reminders', JSON.stringify(list));
-        
-        renderReminders();
-        taskInput.value = '';
-        taskInput.classList.remove('input-error');
-
+        // --- CASO A: ES UNA ALARMA (RECUERDO) ---
+        procesarAlarma(value, match);
     } else {
-        taskInput.classList.add('input-error');
-        setTimeout(() => taskInput.classList.remove('input-error'), 300);
+        // --- CASO B: ES UNA TAREA (PENDIENTE) ---
+        procesarTarea(value);
     }
+
+    resetState();
+    renderAll();
 });
+
+// 5. PROCESAR ALARMAS
+function procesarAlarma(value, match) {
+    let horas = parseInt(match[1]);
+    let minutos = match[2] ? parseInt(match[2]) : 0;
+    let periodo = match[3] ? match[3].toLowerCase() : null;
+
+    if (periodo === 'pm' && horas < 12) horas += 12;
+    else if (periodo === 'am' && horas === 12) horas = 0;
+
+    const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    let text = value.replace(match[0], '').trim() || "Recordatorio";
+
+    let list = JSON.parse(localStorage.getItem('reminders') || '[]');
+
+    if (editId !== null) {
+        // ACTUALIZAR EXISTENTE
+        list = list.map(r => r.id === editId ? { ...r, text, time: fullTime, emoji: selectedEmoji } : r);
+    } else {
+        // CREAR NUEVO
+        list.push({ id: Date.now(), text, time: fullTime, emoji: selectedEmoji, notified: false });
+    }
+    localStorage.setItem('reminders', JSON.stringify(list));
+}
+
+// 6. PROCESAR TAREAS
+function procesarTarea(value) {
+    const list = JSON.parse(localStorage.getItem('tasks') || '[]');
+    list.push({ id: Date.now(), text: value, emoji: selectedEmoji, completed: false });
+    localStorage.setItem('tasks', JSON.stringify(list));
+    
+    // Actualizar barra de progreso
+    let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+    localStorage.setItem('totalCreatedToday', total + 1);
+}
+
+// 7. RENDERIZADO GENERAL
+function renderAll() {
+    renderList('reminders', 'reminderList', true);
+    renderList('tasks', 'taskList', false);
+    updateProgress();
+}
+
+function renderList(key, elementId, isAlarm) {
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    const container = document.getElementById(elementId);
+    
+    container.innerHTML = list.map(item => `
+        <div class="reminder-card ${isAlarm ? 'alarm-style' : ''}">
+            <div>
+                <span>${item.emoji || '📝'}</span>
+                ${isAlarm ? `<strong class="time-badge">${item.time}</strong>` : ''}
+                <span>${item.text}</span>
+            </div>
+            <div class="actions">
+                ${!isAlarm ? `<button onclick="completeTask(${item.id})">✓</button>` : ''}
+                <button onclick="prepareEdit(${item.id}, '${key}')">✎</button>
+                <button onclick="deleteItem('${key}', ${item.id})">✕</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 8. FUNCIONES DE APOYO
+window.deleteItem = (key, id) => {
+    let list = JSON.parse(localStorage.getItem(key) || '[]');
+    list = list.filter(i => i.id !== id);
+    localStorage.setItem(key, JSON.stringify(list));
+    renderAll();
+};
+
+window.completeTask = (id) => {
+    let completed = parseInt(localStorage.getItem('completedToday') || 0);
+    localStorage.setItem('completedToday', completed + 1);
+    deleteItem('tasks', id);
+};
+
+window.prepareEdit = (id, key) => {
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    const item = list.find(i => i.id === id);
+    if (item) {
+        taskInput.value = item.text + (item.time ? " " + item.time : "");
+        editId = id;
+        addBtn.innerText = "Actualizar";
+        cancelBtn.style.display = "inline-block";
+    }
+};
+
+function resetState() {
+    editId = null;
+    selectedEmoji = "📝";
+    taskInput.value = '';
+    addBtn.innerText = "Fijar";
+    cancelBtn.style.display = "none";
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+}
+
+// 9. BARRA DE PROGRESO
+function updateProgress() {
+    const total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+    const done = parseInt(localStorage.getItem('completedToday') || 0);
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+    document.getElementById('progressBar').style.width = percent + "%";
+    document.getElementById('progressText').innerText = `${percent}% completado`;
+}
+
+// INICIO
+renderAll();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function saveReminder(reminder) {
     const list = JSON.parse(localStorage.getItem('reminders') || '[]');
@@ -81,12 +171,18 @@ function saveReminder(reminder) {
 
 // --- MEJORA 2: RENDERIZADO CON URGENCIA ---
 function renderReminders() {
+  
+    
+    
+    updateProgress(); //
     const list = JSON.parse(localStorage.getItem('reminders') || '[]');
     
     if (list.length === 0) {
         reminderList.innerHTML = `<p style="color: #666; margin-top: 20px;">No tienes pendientes. <br> ¡Disfruta tu tiempo libre! ☕</p>`;
         return;
     }
+    
+
     const ahora = new Date();
     const horaActualStr = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
@@ -94,6 +190,25 @@ function renderReminders() {
         
         let urgencyClass = '';
         const diff = calcularDiferenciaMinutos(horaActualStr, r.time);
+        let touchstartX = 0;
+let touchendX = 0;
+
+function handleGesture(e, id) {
+    const card = e.currentTarget;
+    const diffX = touchstartX - touchendX;
+
+    if (diffX > 100) { // Deslizar a la izquierda para borrar
+        card.style.transform = "translateX(-150%)";
+        setTimeout(() => deleteReminder(id), 300);
+    } else {
+        card.style.transform = "translateX(0)";
+    }
+}
+
+// Al renderizar cada card, añade estos eventos:
+// ontouchstart="touchstartX = event.changedTouches[0].screenX"
+// ontouchmove="this.style.transform = 'translateX(' + (event.changedTouches[0].screenX - touchstartX) + 'px)'"
+// ontouchend="touchendX = event.changedTouches[0].screenX; handleGesture(event, ${r.id})"
         
         
         
@@ -101,17 +216,36 @@ function renderReminders() {
         else if (diff > 0 && diff <= 60) urgencyClass = 'soon';
 
         return `
-            <div class="reminder-card ${urgencyClass}">
-                <div>
-                    <span class="time-badge">${r.time}</span>
-                    <span>${r.text}</span>
-                </div>
-                
-                <button onclick="prepareEdit(${r.id})" style="background:transparent; color:#bb86fc; border:none; cursor:pointer; margin-right:10px;">✎</button>
+          <div class="reminder-card">
+            <div>
+                <span style="font-size: 1.2em; margin-right: 8px;">${r.emoji || "📝"}</span>
+                <strong class="time-badge">${r.time}</strong> 
+                <span>${r.text}</span>
+            </div>
+            <div class="actions">
+                <button onclick="prepareEdit(${r.id})">✎</button>
                 <button onclick="deleteReminder(${r.id})">✕</button>
             </div>
+        </div>
         `;
     }).join('');
+    function updateProgress() {
+    const totalHoy = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+    const completadas = parseInt(localStorage.getItem('completedToday') || 0);
+    
+    const porcentaje = totalHoy === 0 ? 0 : Math.round((completadas / totalHoy) * 100);
+    
+    document.getElementById('progressBar').style.width = porcentaje + "%";
+    document.getElementById('progressText').innerText = `${porcentaje}% completado (${completadas}/${totalHoy})`;
+}
+
+// Llama a updateProgress() al final de renderReminders
+}
+function resetEmoji() {
+    selectedEmoji = "📝";
+    document.querySelectorAll('.cat-chip').forEach(chip => {
+        chip.classList.remove('selected');
+    });
 }
 
 // Función auxiliar para calcular urgencia
@@ -177,7 +311,17 @@ window.prepareEdit = (id) => {
         addBtn.innerText = "Actualizar";
         taskInput.focus();
     }
+    cancelBtn.style.display = "inline-block";
 };
+function resetState() {
+    editId = null;
+    addBtn.innerText = "Fijar";
+    cancelBtn.style.display = "none";
+    taskInput.value = "";
+    addBtn.style.backgroundColor = "";
+}
+
+cancelBtn.addEventListener('click', resetState);
 
 // 2. Modifica el evento del addBtn para que sepa si está creando o editando
 // Busca tu addBtn.addEventListener y envuelve la lógica así:
@@ -217,4 +361,53 @@ navigator.serviceWorker.addEventListener('message', (event) => {
         renderReminders();
         alert("Pospuesto 5 minutos");
     }
+});
+
+
+document.querySelectorAll('.cat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const newEmoji = chip.dataset.emoji;
+        let currentText = taskInput.value.trim();
+
+        // 1. Deseleccionar todos los chips y seleccionar el actual
+        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+
+        // 2. Eliminar el emoji anterior del texto (si existe)
+        // `selectedEmoji` aún tiene el valor *antes* de este clic
+        if (currentText.startsWith(selectedEmoji)) {
+            currentText = currentText.substring(selectedEmoji.length).trim();
+        }
+
+        // 3. Actualizar el emoji global y poner el nuevo emoji al principio del texto
+        selectedEmoji = newEmoji;
+        taskInput.value = `${selectedEmoji} ${currentText}`.trim();
+        taskInput.focus();
+    });
+});
+
+// Al guardar (addBtn), usa selectedEmoji como parte del texto o como una propiedad nueva.
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    // Guardar preferencia para que no se resetee al recargar
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+});
+
+// Al cargar la página:
+if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const minToAdd = parseInt(btn.dataset.min);
+        const fecha = new Date();
+        fecha.setMinutes(fecha.getMinutes() + minToAdd);
+        
+        const horaCalculada = fecha.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        
+        // Ponemos la hora automáticamente en el input para que el usuario solo escriba el texto
+        taskInput.value = (taskInput.value.replace(/\d{1,2}:\d{2}/, '').trim() + " " + horaCalculada).trim();
+        taskInput.focus();
+    });
 });

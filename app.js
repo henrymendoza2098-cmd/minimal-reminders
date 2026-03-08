@@ -4,6 +4,25 @@ let selectedEmoji = "📝";
 const taskInput = document.getElementById('taskInput');
 const addBtn = document.getElementById('addBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+// Variable global para el filtro actual
+let currentFilter = 'all';
+
+// Eventos para los chips de filtro
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        // 1. Quitar la clase 'active' de todos los chips
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        
+        // 2. Poner 'active' al que acabamos de tocar
+        chip.classList.add('active');
+        
+        // 3. Guardar el emoji o 'all' en la variable
+        currentFilter = chip.dataset.filter;
+        
+        // 4. Refrescar la pantalla
+        renderAll();
+    });
+});
 
 // 2. INICIO Y REGISTRO
 if ('serviceWorker' in navigator) {
@@ -103,6 +122,12 @@ function renderAll() {
 function renderList(key, elementId, isAlarm) {
     const list = JSON.parse(localStorage.getItem(key) || '[]');
     const container = document.getElementById(elementId);
+
+    // --- LA MAGIA DEL FILTRO AQUÍ ---
+    if (currentFilter !== 'all') {
+        // Solo conservamos los items cuyo emoji coincida con el filtro actual
+        list = list.filter(item => item.emoji === currentFilter);
+    }
     
     container.innerHTML = list.map(item => `
         <div class="reminder-card ${isAlarm ? 'alarm-style' : ''}">
@@ -129,9 +154,16 @@ window.deleteItem = (key, id) => {
 };
 
 window.completeTask = (id) => {
+    // Aumentar el contador
     let completed = parseInt(localStorage.getItem('completedToday') || 0);
     localStorage.setItem('completedToday', completed + 1);
+    
+    // Eliminar la tarea de la lista principal
     deleteItem('tasks', id);
+    
+    // Refrescar toda la interfaz (Barra, Listas y Fuego)
+    renderAll();
+    updateComboUI(); // ¡AÑADE ESTA LÍNEA AQUÍ!
 };
 
 window.prepareEdit = (id, key) => {
@@ -454,18 +486,110 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 });
 // --- BOTÓN DE RESETEO DIARIO ---
 document.getElementById('resetDayBtn').addEventListener('click', () => {
-    // Pedimos confirmación antes de borrar
-    const seguro = confirm("¿Quieres reiniciar la barra a 0% y borrar las tareas de hoy?");
+  // --- LÓGICA DEL MODAL DE RESETEO ---
+const modal = document.getElementById('customModal');
+const cancelResetBtn = document.getElementById('cancelResetBtn');
+const confirmResetBtn = document.getElementById('confirmResetBtn');
+
+// 1. Al presionar el botón de la interfaz, abrimos el modal
+document.getElementById('resetDayBtn').addEventListener('click', () => {
+    modal.classList.add('active');
+});
+
+// 2. Si le da a "Cancelar", cerramos el modal sin hacer nada
+cancelResetBtn.addEventListener('click', () => {
+    modal.classList.remove('active');
+});
+
+// 3. Si le da a "Sí, reiniciar", ejecutamos la limpieza
+confirmResetBtn.addEventListener('click', () => {
+    // Ponemos contadores a cero
+    localStorage.setItem('totalCreatedToday', 0);
+    localStorage.setItem('completedToday', 0);
+    localStorage.setItem('tasks', '[]'); // Vaciamos la lista visual
     
-    if (seguro) {
-        // 1. Ponemos los contadores a cero
-        localStorage.setItem('totalCreatedToday', 0);
-        localStorage.setItem('completedToday', 0);
-        
-        // 2. Limpiamos la lista de tareas (opcional, pero recomendado al reiniciar)
-        localStorage.setItem('tasks', '[]');
-        
-        // 3. Refrescamos la pantalla para que la barra y las listas se actualicen
-        renderAll();
+    // Refrescamos la UI
+    renderAll();
+    updateComboUI(); // Apaga el fuego
+    
+    // Cerramos el modal
+    modal.classList.remove('active');
+});
+
+// (Opcional) Cerrar el modal si el usuario hace clic fuera de la caja (en el fondo oscuro)
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        modal.classList.remove('active');
     }
 });
+});
+// --- SISTEMA DE RACHAS (STREAKS) ---
+
+// 1. Obtiene la medianoche exacta de cualquier fecha en milisegundos
+function getMidnightTime(date = new Date()) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+// 2. Revisa el estado de la racha al abrir la app
+function checkStreak() {
+    const todayTime = getMidnightTime();
+    const lastTime = parseInt(localStorage.getItem('lastStreakDate') || 0);
+    let streak = parseInt(localStorage.getItem('streakCount') || 0);
+
+    const ONE_DAY = 86400000; // Milisegundos en 24 horas
+    const diffDays = Math.round((todayTime - lastTime) / ONE_DAY);
+
+    // Si pasaron 2 días o más desde la última tarea completada, se rompe la racha
+    if (diffDays > 1) {
+        streak = 0;
+        localStorage.setItem('streakCount', 0);
+    }
+    
+    updateStreakUI(streak);
+}
+
+// --- SISTEMA DE COMBO DIARIO (Tareas completadas hoy) ---
+
+// --- SISTEMA DE COMBO DIARIO CON PIXEL ART DINÁMICO ---
+
+function updateComboUI() {
+    const completadasHoy = parseInt(localStorage.getItem('completedToday') || 0);
+    
+    const container = document.getElementById('streakContainer');
+    const fireImg = document.getElementById('streakIcon'); // Ahora es la etiqueta <img>
+    const countText = document.getElementById('streakCount');
+
+    // Actualizar el texto
+    countText.innerText = `${completadasHoy} ${completadasHoy === 1 ? 'tarea' : 'tareas'}`;
+
+    // Lógica de Estados Visibles
+    if (completadasHoy === 0) {
+        // --- ESTADO 0: HIELO/APAGADO ---
+        container.classList.remove('on-fire', 'super-fire');
+       fireImg.src = 'fuego_gris.gif';          // Cargamos el fuego gris
+        fireImg.style.display = 'block';         // ¡Aseguramos que sea visible!
+        countText.style.color = "#888";
+    } 
+    else if (completadasHoy < 10) {
+        // --- ESTADO 1: FUEGO NARANJA (1 a 9 tareas) ---
+        container.classList.remove('super-fire'); // Quitamos el azul si venía de ahí
+        container.classList.add('on-fire');       // Ponemos el naranja
+        
+        fireImg.src = 'fuego_naranja.gif';       // Cambiamos la imagen al GIF naranja
+        fireImg.style.display = 'block';         // Mostramos la imagen
+        countText.style.color = "white";         // Texto blanco
+    } 
+    else {
+        // --- ESTADO 2: SUPER FUEGO AZUL (10 o más tareas) ---
+        container.classList.remove('on-fire');    // Quitamos el naranja
+        container.classList.add('super-fire');    // Ponemos el azul/morado
+        
+        fireImg.src = 'fuego_azul.gif';          // Cambiamos la imagen al GIF azul
+        fireImg.style.display = 'block';         // Mostramos la imagen
+        countText.style.color = "white";         // Texto blanco
+    }
+}
+
+// Asegúrate de que esta función se llame al cargar la página y al completar tareas.
+// Ejecutar revisión visual al cargar la página
+updateComboUI();

@@ -11,13 +11,17 @@
     <button id="themeToggle" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 20px; cursor: pointer;">🌓</button>
 
     <main class="container">
+                    <div class="streak-container" id="streakContainer">
+                    <img src="fuego_naranja.gif" id="streakIcon" alt="Fuego" class="pixel-fire">
+                    <span id="streakCount">🧊0 tareas</span>
+                </div>
      <div class="progress-container">
     <div id="progressBar" class="progress-bar"></div>
     <span id="progressText">0% completado</span>
 </div>
 <button id="resetDayBtn" class="btn-reset">
     <span class="icon">🔄</span> Reiniciar Día
-</button>
+</button>  
         <h1>Recordatorio Rápido</h1>
         
         <div class="categories">
@@ -36,22 +40,33 @@
             <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
         </div>
         
+        
         <div class="presets">
     <button type="button" class="preset-btn" data-min="15">+15 min</button>
     <button type="button" class="preset-btn" data-min="60">+1 hora</button>
     <button type="button" class="preset-btn" data-min="1440">Mañana</button>
 </div>
+
 <div class="dashboard">
         <section class="panel">
             <h3>🔔 Próximas Alarmas</h3>
             <div id="reminderList" class="list-container"></div>
         </section>
+        <div class="filter-container">
+    <button class="filter-chip active" data-filter="all">Todas</button>
+    <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
+    <button class="filter-chip" data-filter="🗄️">🗄️ Base de Datos</button>
+    <button class="filter-chip" data-filter="⚛️">⚛️ Física</button>
+    <button class="filter-chip" data-filter="💻">💻 Código</button>
+    <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
+</div>
 
         <section class="panel">
             <h3>✅ Tareas del Día</h3>
             <div id="taskList" class="list-container"></div>
         </section>
     </div>
+    
 
         <div id="statusMessage"></div>
 
@@ -60,5 +75,15 @@
     </main>
 
     <script src="app.js"></script>
+    <div id="customModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>¿Reiniciar el Día? 🔄</h3>
+        <p>Tu barra volverá a 0% y las tareas de hoy se borrarán. Esta acción no se puede deshacer.</p>
+        <div class="modal-actions">
+            <button id="cancelResetBtn" class="btn-cancel">Cancelar</button>
+            <button id="confirmResetBtn" class="btn-confirm">Sí, reiniciar</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>

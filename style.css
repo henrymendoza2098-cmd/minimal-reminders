@@ -205,3 +205,150 @@ h3 {
     transition: transform 0.4s ease;
     display: inline-block;
 }
+
+/* Estilo base del contenedor (Hielo/Apagado por defecto) */
+.streak-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05); /* Fondo muy suave */
+    color: #888; /* Texto gris */
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+}
+
+/* Estilo de la imagen del fuego */
+.pixel-fire {
+    width: 20px; /* Tamaño aumentado */
+    height: 20px;
+    margin: 0; /* Quitamos los márgenes negativos para que respete los bordes */
+   
+    image-rendering: pixelated; /* Mantiene bordes nítidos */
+    
+    /* --- EL TRUCO DE MAGIA --- */
+    mix-blend-mode: screen; /* "Filtra" el negro y deja pasar la luz del fuego */
+}
+
+/* --- ESTADOS ACTIVOS --- */
+
+/* 1. Fuego Naranja (Racha normal) */
+.streak-container.on-fire {
+    background: linear-gradient(45deg, #b97104, #ff5252);
+    color: white;
+    border-color: #ff9900;
+    box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4);
+}
+
+/* 2. Fuego Azul (Superproducción) */
+.streak-container.super-fire {
+    background: linear-gradient(45deg, #035ca5, #9c27b0); /* Azul a Morado */
+    color: white;
+    border-color: #2196f3;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.5);
+    animation: pulseBlue 2s infinite; /* Una animación extra opcional */
+}
+
+/* Animación de pulso para el fuego azul */
+@keyframes pulseBlue {
+    0% { box-shadow: 0 4px 15px rgba(33, 150, 243, 0.5); }
+    50% { box-shadow: 0 4px 25px rgba(33, 150, 243, 0.8); }
+    100% { box-shadow: 0 4px 15px rgba(33, 150, 243, 0.5); }
+}
+/* --- MODAL PERSONALIZADO --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
+    backdrop-filter: blur(4px); /* Difumina lo que está detrás */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Siempre por encima de todo */
+    opacity: 0; /* Oculto por defecto */
+    pointer-events: none; /* No deja hacer clic si está oculto */
+    transition: opacity 0.3s ease;
+}
+
+/* Clase que añadiremos con JS para mostrarlo */
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: #1e1e1e; /* Color oscuro para que encaje con la app */
+    padding: 25px;
+    border-radius: 16px;
+    text-align: center;
+    max-width: 320px;
+    border: 1px solid #333;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    /* Animación de entrada (empieza más pequeño y un poco abajo) */
+    transform: translateY(20px) scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+/* Al activarse, vuelve a su tamaño y posición original con un pequeño rebote */
+.modal-overlay.active .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-content h3 { color: #ff5252; margin-top: 0; font-size: 1.3em;}
+.modal-content p { color: #aaa; font-size: 0.9em; margin-bottom: 25px; line-height: 1.4;}
+
+.modal-actions { display: flex; gap: 12px; justify-content: center; }
+
+.btn-cancel {
+    background: transparent; color: #ccc; border: 1px solid #555;
+    padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold;
+    transition: 0.2s;
+}
+.btn-cancel:hover { background: #333; color: white; }
+
+.btn-confirm {
+    background: #ff5252; color: white; border: none;
+    padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold;
+    transition: 0.2s;
+}
+.btn-confirm:hover { background: #ff1744; transform: scale(1.05); }
+/* --- FILTROS DESLIZABLES --- */
+.filter-container {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 5px; 
+    margin: 20px 0;
+    /* Ocultar la barra de scroll pero mantener la funcionalidad */
+    scrollbar-width: none; /* Para Firefox */
+}
+
+.filter-container::-webkit-scrollbar {
+    display: none; /* Para Chrome, Safari y Edge */
+}
+
+.filter-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap; /* Evita que el texto se rompa en dos líneas */
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+/* Estado activo o cuando pasas el ratón */
+.filter-chip.active, .filter-chip:hover {
+    background: #03dac6; /* Usa tu color de acento aquí */
+    color: #000;
+    border-color: #03dac6;
+    font-weight: bold;
+    transform: scale(1.05);
+}

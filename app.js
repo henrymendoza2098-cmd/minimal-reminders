@@ -24,10 +24,20 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
     });
 });
 
-// 2. INICIO Y REGISTRO
+
+    // 2. INICIO, SERVICE WORKER Y TEMA OSCURO
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => console.log("SW Activo"));
+    navigator.serviceWorker.register('sw.js').then(() => {
+        console.log("SW Activo");
+        // ¡NUEVO! Pedir permiso de notificaciones al móvil si no lo tiene
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') console.log("Permiso de notificaciones concedido.");
+            });
+        }
+    });
 }
+
 
 // 3. CATEGORÍAS (EMOJIS)
 document.querySelectorAll('.cat-chip').forEach(chip => {
@@ -256,7 +266,10 @@ function calcularDiferenciaMinutos(h1, h2) {
 }
 
 
-// EL VIGILANTE MEJORADO
+
+
+
+// 12. EL VIGILANTE DE ALARMAS BLINDADO
 setInterval(() => {
     const ahora = new Date();
     const horaActual = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -265,42 +278,58 @@ setInterval(() => {
     let huboCambios = false;
 
     lista.forEach(r => {
-        // Convertimos las horas a minutos para poder comparar matemáticamente
         const [hActual, mActual] = horaActual.split(':').map(Number);
         const [hReminder, mReminder] = r.time.split(':').map(Number);
         
-        // Si la hora actual es MAYOR o IGUAL a la del recordatorio (y no se ha notificado)
         if ((hActual * 60 + mActual) >= (hReminder * 60 + mReminder) && !r.notified) {
-            // DISPARAR NOTIFICACIÓN DESDE EL SERVICE WORKER
-            navigator.serviceWorker.ready.then(reg => {
-              // Dentro del navigator.serviceWorker.ready.then...
-// Dentro de navigator.serviceWorker.ready.then...
-reg.showNotification("📝 Recordatorio", {
-    body: r.text,
-    icon: "https://cdn-icons-png.flaticon.com/512/559/559339.png",
-    tag: 'reminder-' + r.id,
-    data: { reminderId: r.id, text: r.text }, // Pasamos datos al SW
-    actions: [
-        { action: 'done', title: '✅ Hecho' },
-        { action: 'snooze', title: '⏳ +5 min' }
-    ]
-});
-            });
+            
+            // MÉTODO ROBUSTO PARA MÓVILES
+            if ('serviceWorker' in navigator && Notification.permission === "granted") {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification("📝 " + (r.emoji || ""), {
+                        body: r.text,
+                        icon: "https://cdn-icons-png.flaticon.com/512/559/559339.png",
+                        vibrate: [200, 100, 200, 100, 200], // Patrón de vibración más fuerte
+                        tag: 'reminder-' + r.id // Evita que se dupliquen notificaciones
+                    });
+                });
+            }
 
             r.notified = true;
             huboCambios = true;
-            // Borrado automático tras 10 segundos de notificar
-            setTimeout(() => { deleteItem('reminders', r.id); }, 10000);
             
+            // Aumentamos el tiempo a 20 segundos para que te dé tiempo de leerla antes de que se borre
+            setTimeout(() => { deleteItem('reminders', r.id); }, 20000); 
         }
     });
 
     if (huboCambios) {
         localStorage.setItem('reminders', JSON.stringify(lista));
-        
         renderAll();
     }
-}, 10000); // Revisa cada 10 segundos para más precisión
+}, 10000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // 1. Lleva el recordatorio al input principal

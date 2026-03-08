@@ -352,3 +352,63 @@ h3 {
     font-weight: bold;
     transform: scale(1.05);
 }
+/* --- EMPTY STATE (ESTADO VACÍO) --- */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    animation: fadeIn 0.4s ease;
+}
+
+.empty-state .empty-icon {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 10px;
+    opacity: 0.5;
+    filter: grayscale(100%); /* Le da un toque apagado/inactivo */
+    transition: 0.3s;
+}
+
+.empty-state:hover .empty-icon {
+    opacity: 0.8;
+    filter: grayscale(0%);
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* --- SELECTOR DE CATEGORÍAS (AL CREAR) --- */
+.category-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto; /* Permite deslizar si no caben en pantalla */
+    scrollbar-width: none; /* Oculta la barra de scroll */
+}
+
+.category-selector::-webkit-scrollbar {
+    display: none;
+}
+
+.cat-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap;
+    color: #ccc;
+}
+
+/* Cuando seleccionas una categoría para crear */
+.cat-chip.selected {
+    background: #ff5252; /* Color distintivo para el selector */
+    color: white;
+    border-color: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 82, 82, 0.3);
+}

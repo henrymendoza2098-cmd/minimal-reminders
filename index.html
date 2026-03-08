@@ -23,13 +23,17 @@
     <span class="icon">🔄</span> Reiniciar Día
 </button>  
         <h1>Recordatorio Rápido</h1>
-        
-        <div class="categories">
-    <span class="cat-chip" data-emoji="📚">📚</span>
-    <span class="cat-chip" data-emoji="💊">💊</span>
-    <span class="cat-chip" data-emoji="🛒">🛒</span>
-    <span class="cat-chip" data-emoji="🎯">🎯</span>
+        <div class="category-selector">
+    <span class="cat-chip selected" data-emoji="📝">📝 General</span>
+    <span class="cat-chip" data-emoji="🌐">🌐 Redes</span>
+    <span class="cat-chip" data-emoji="🗄️">🗄️ BD</span>
+    <span class="cat-chip" data-emoji="⚛️">⚛️ Física</span>
+    <span class="cat-chip" data-emoji="💻">💻 Código</span>
+    <span class="cat-chip" data-emoji="🎮">🎮 Ocio</span>
 </div>
+        
+
+
         <div class="input-group">
             
             <input type="text" id="taskInput" placeholder="Ej: Llamar a mamá 18:00" autocomplete="off">
@@ -52,7 +56,11 @@
             <h3>🔔 Próximas Alarmas</h3>
             <div id="reminderList" class="list-container"></div>
         </section>
-        <div class="filter-container">
+   
+
+
+
+     <div class="filter-container">
     <button class="filter-chip active" data-filter="all">Todas</button>
     <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
     <button class="filter-chip" data-filter="🗄️">🗄️ Base de Datos</button>

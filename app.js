@@ -120,15 +120,33 @@ function renderAll() {
 }
 
 function renderList(key, elementId, isAlarm) {
-    const list = JSON.parse(localStorage.getItem(key) || '[]');
-    const container = document.getElementById(elementId);
-
-    // --- LA MAGIA DEL FILTRO AQUÍ ---
+    let list = JSON.parse(localStorage.getItem(key) || '[]');
+    
+    // 1. Aplicamos el filtro si no estamos en "Todas"
     if (currentFilter !== 'all') {
-        // Solo conservamos los items cuyo emoji coincida con el filtro actual
         list = list.filter(item => item.emoji === currentFilter);
     }
+
+    const container = document.getElementById(elementId);
     
+    // 2. LÓGICA DEL EMPTY STATE
+    if (list.length === 0) {
+        // Textos dinámicos dependiendo de si es la lista de alarmas o de tareas
+        const icon = isAlarm ? "📭" : "🗡️";
+        const message = isAlarm 
+            ? "No hay alarmas programadas." 
+            : "¡Todo limpio! Ni un solo demonio a la vista.";
+            
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">${icon}</span>
+                <p>${message}</p>
+            </div>
+        `;
+        return; // ¡Importante! Salimos de la función aquí para no ejecutar el map de abajo
+    }
+
+    // 3. Si hay tareas, las dibujamos normalmente
     container.innerHTML = list.map(item => `
         <div class="reminder-card ${isAlarm ? 'alarm-style' : ''}">
             <div>

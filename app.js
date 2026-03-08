@@ -38,7 +38,7 @@ document.querySelectorAll('.cat-chip').forEach(chip => {
     });
 });
 
-// 4. LÓGICA PRINCIPAL: EL BOTÓN "FIJAR"
+
 addBtn.addEventListener('click', () => {
     const value = taskInput.value.trim();
     if (!value) return;
@@ -55,9 +55,11 @@ addBtn.addEventListener('click', () => {
         procesarTarea(value);
     }
 
+    // Limpiamos el input y refrescamos la interfaz con la función nueva
     resetState();
     renderAll();
 });
+
 
 // 5. PROCESAR ALARMAS
 // 5. PROCESAR ALARMAS (Con tu filtro anti-duplicados)
@@ -209,100 +211,6 @@ function updateProgress() {
     const total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
     const done = parseInt(localStorage.getItem('completedToday') || 0);
     const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-    document.getElementById('progressBar').style.width = percent + "%";
-    document.getElementById('progressText').innerText = `${percent}% completado`;
-}
-
-// INICIO
-renderAll();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function saveReminder(reminder) {
-    const list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    list.push(reminder);
-    localStorage.setItem('reminders', JSON.stringify(list));
-}
-
-// --- MEJORA 2: RENDERIZADO CON URGENCIA ---
-function renderReminders() {
-  
-    
-    
-    updateProgress(); //
-    const list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    
-    if (list.length === 0) {
-        reminderList.innerHTML = `<p style="color: #666; margin-top: 20px;">No tienes pendientes. <br> ¡Disfruta tu tiempo libre! ☕</p>`;
-        return;
-    }
-    
-
-    const ahora = new Date();
-    const horaActualStr = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-    reminderList.innerHTML = list.map(r => {
-        
-        let urgencyClass = '';
-        const diff = calcularDiferenciaMinutos(horaActualStr, r.time);
-        let touchstartX = 0;
-let touchendX = 0;
-
-function handleGesture(e, id) {
-    const card = e.currentTarget;
-    const diffX = touchstartX - touchendX;
-
-    if (diffX > 100) { // Deslizar a la izquierda para borrar
-        card.style.transform = "translateX(-150%)";
-        setTimeout(() => deleteReminder(id), 300);
-    } else {
-        card.style.transform = "translateX(0)";
-    }
-}
-
-// Al renderizar cada card, añade estos eventos:
-// ontouchstart="touchstartX = event.changedTouches[0].screenX"
-// ontouchmove="this.style.transform = 'translateX(' + (event.changedTouches[0].screenX - touchstartX) + 'px)'"
-// ontouchend="touchendX = event.changedTouches[0].screenX; handleGesture(event, ${r.id})"
-        
-        
-        
-        if (diff > 0 && diff <= 10) urgencyClass = 'urgent';
-        else if (diff > 0 && diff <= 60) urgencyClass = 'soon';
-
-        return `
-          <div class="reminder-card">
-            <div>
-                <span style="font-size: 1.2em; margin-right: 8px;">${r.emoji || "📝"}</span>
-                <strong class="time-badge">${r.time}</strong> 
-                <span>${r.text}</span>
-            </div>
-            <div class="actions">
-                <button onclick="prepareEdit(${r.id})">✎</button>
-                <button onclick="deleteReminder(${r.id})">✕</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-   // 9. BARRA DE PROGRESO DINÁMICA
-// 9. BARRA DE PROGRESO DINÁMICA (Corregida)
-function updateProgress() {
-    const total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
-    const done = parseInt(localStorage.getItem('completedToday') || 0);
-    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
     
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
@@ -325,8 +233,14 @@ function updateProgress() {
     }
 }
 
-// Llama a updateProgress() al final de renderReminders
-}
+// INICIO
+renderAll();
+
+
+
+
+// --- MEJORA 2: RENDERIZADO CON URGENCIA ---
+
 function resetEmoji() {
     selectedEmoji = "📝";
     document.querySelectorAll('.cat-chip').forEach(chip => {
@@ -340,12 +254,7 @@ function calcularDiferenciaMinutos(h1, h2) {
     const [hor2, min2] = h2.split(':').map(Number);
     return (hor2 * 60 + min2) - (hor1 * 60 + min1);
 }
-window.deleteReminder = (id) => {
-    let list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    list = list.filter(r => r.id !== id);
-    localStorage.setItem('reminders', JSON.stringify(list));
-    renderReminders();
-};
+
 
 // EL VIGILANTE MEJORADO
 setInterval(() => {
@@ -381,29 +290,21 @@ reg.showNotification("📝 Recordatorio", {
             r.notified = true;
             huboCambios = true;
             // Borrado automático tras 10 segundos de notificar
-            setTimeout(() => { deleteReminder(r.id); }, 10000);
+            setTimeout(() => { deleteItem('reminders', r.id); }, 10000);
+            
         }
     });
 
     if (huboCambios) {
         localStorage.setItem('reminders', JSON.stringify(lista));
-        renderReminders();
+        
+        renderAll();
     }
 }, 10000); // Revisa cada 10 segundos para más precisión
 
-renderReminders();
+
 // 1. Lleva el recordatorio al input principal
-window.prepareEdit = (id) => {
-    const list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    const reminder = list.find(r => r.id === id);
-    if (reminder) {
-        taskInput.value = `${reminder.text} ${reminder.time}`;
-        editId = id;
-        addBtn.innerText = "Actualizar";
-        taskInput.focus();
-    }
-    cancelBtn.style.display = "inline-block";
-};
+
 function resetState() {
     editId = null;
     addBtn.innerText = "Fijar";
@@ -415,28 +316,7 @@ function resetState() {
 cancelBtn.addEventListener('click', resetState);
 
 // 2. Modifica el evento del addBtn para que sepa si está creando o editando
-// Busca tu addBtn.addEventListener y envuelve la lógica así:
-addBtn.addEventListener('click', () => {
-    // ... (aquí va tu lógica de Regex que ya tienes para extraer texto y hora) ...
-    
-    if (match) {
-        // ... (lógica de normalización de hora) ...
 
-        if (editId) {
-            // Lógica de Actualizar
-            let list = JSON.parse(localStorage.getItem('reminders') || '[]');
-            list = list.map(r => r.id === editId ? { ...r, text: taskText, time: fullTime, notified: false } : r);
-            localStorage.setItem('reminders', JSON.stringify(list));
-            editId = null;
-            addBtn.innerText = "Fijar";
-        } else {
-            // Lógica de Crear (la que ya tenías)
-            saveReminder(newReminder);
-        }
-        renderReminders();
-        taskInput.value = '';
-    }
-});
 navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data.type === 'SNOOZE') {
         const id = event.data.id;
@@ -449,7 +329,7 @@ navigator.serviceWorker.addEventListener('message', (event) => {
 
         list = list.map(r => r.id === id ? { ...r, time: nuevaHora, notified: false } : r);
         localStorage.setItem('reminders', JSON.stringify(list));
-        renderReminders();
+        renderAll();
         alert("Pospuesto 5 minutos");
     }
 });

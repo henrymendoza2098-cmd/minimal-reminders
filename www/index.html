@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Recordar 📝</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="themeToggle" style="position: fixed; top: 15px; right: 15px; z-index: 1000; background: transparent; border: none; font-size: 20px; cursor: pointer;">🌓</button>
+
+    <main class="container">
+        
+        <section id="view-today" class="view">
+            <h1>Hoy 👋</h1>
+            
+            <div class="streak-container" id="streakContainer">
+                <img src="fuego_naranja.gif" id="streakIcon" alt="Fuego" class="pixel-fire">
+                <span id="streakCount"> 0 tareas</span>
+            </div>
+
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <span id="progressText">0% completado</span>
+
+            <div class="filter-container">
+                <button class="filter-chip active" data-filter="all">Todas</button>
+                <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
+                <button class="filter-chip" data-filter="🗄️">🗄️ BD</button>
+                <button class="filter-chip" data-filter="⚛️">⚛️ Física</button>
+                <button class="filter-chip" data-filter="💻">💻 Código</button>
+                <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
+            </div>
+            <div class="input-group" style="margin-top: 10px;">
+        <input type="text" id="taskInputToday" placeholder="Añadir tarea rápida..." autocomplete="off">
+        <button id="addBtnToday" style="background-color: var(--pastel-green); color: #2D5D39;">+</button>
+    </div>
+
+
+    
+    <div class="filter-container"> </div>
+
+            <section class="panel">
+                <h3>✅ Tareas del Día</h3>
+                <div id="taskList" class="list-container"></div>
+            </section>
+        </section>
+
+        <section id="view-reminders" class="view" style="display:none;">
+            <h2>Recordatorios ⏰</h2>
+
+            <div class="category-selector">
+                <span class="cat-chip selected" data-emoji="📝">📝 General</span>
+                <span class="cat-chip" data-emoji="🌐">🌐 Redes</span>
+                <span class="cat-chip" data-emoji="🗄️">🗄️ BD</span>
+                <span class="cat-chip" data-emoji="⚛️">⚛️ Física</span>
+                <span class="cat-chip" data-emoji="💻">💻 Código</span>
+                <span class="cat-chip" data-emoji="🎮">🎮 Ocio</span>
+            </div>
+            
+
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="Ej: Llamar a mamá 18:00" autocomplete="off">
+                <button id="addBtn">Fijar</button>
+                <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
+            </div>
+
+            <div class="presets">
+                <button type="button" class="preset-btn" data-min="15">+15 min</button>
+                <button type="button" class="preset-btn" data-min="60">+1 hora</button>
+                <button type="button" class="preset-btn" data-min="1440">Mañana</button>
+            </div>
+
+            <section class="panel">
+                <h3>🔔 Próximas Alarmas</h3>
+                <div id="reminderList" class="list-container"></div>
+            </section>
+        </section>
+
+      <section id="view-profile" class="view" style="display:none;">
+        <h2>Mi Perfil 👤</h2>
+    <h2>Tu Rendimiento 📊</h2>
+    <div id="permission-status-card" class="status-card" style="margin-bottom: 20px;">
+    <div class="status-header">
+        <span id="status-icon">🔍</span>
+        <span id="status-title">Verificando sistema...</span>
+    </div>
+    <p id="status-desc">Estamos revisando los permisos de tus alarmas.</p>
+    <button id="fix-permissions-btn" class="btn-mini" style="display: none;">Configurar Ahora</button>
+</div>
+
+    <div class="stats-grid">
+        <div class="stat-card-small pastel-blue">
+            <span class="stat-value" id="total-completed">0</span>
+            <span class="stat-label">Completadas</span>
+        </div>
+        <div class="stat-card-small pastel-green">
+            <span class="stat-value" id="active-tasks">0</span>
+            <span class="stat-label">Pendientes</span>
+        </div>
+    </div>
+
+    <div class="category-stats">
+        <h3>Enfoque por Categoría</h3>
+        <div id="category-bars-container">
+            </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; border-top: 1px solid var(--border-soft); padding-top: 20px;">
+        <p style="font-size: 13px; color: var(--text-sub);">¿Limpiar historial?</p>
+        <button id="resetDayBtn" class="btn-reset">🔄 Reiniciar Día</button>
+    </div>
+</section>
+
+    </main>
+    
+
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-view="view-today">
+            <span>🏠</span>
+            Hoy
+        </button>
+        
+        <button class="nav-item" data-view="view-reminders">
+            <span>⏰</span>
+            Alarmas
+        </button>
+        <button class="nav-item" data-view="view-profile">
+            <span>📊</span>
+            Perfil
+        </button>
+    </nav>
+
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>¿Reiniciar el Día? 🔄</h3>
+            <p>Tu barra volverá a 0% y las tareas de hoy se borrarán. Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+                <button id="cancelResetBtn" class="btn-cancel">Cancelar</button>
+                <button id="confirmResetBtn" class="btn-confirm">Sí, reiniciar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="capacitor.js"></script>
+
+</body>
+</html>

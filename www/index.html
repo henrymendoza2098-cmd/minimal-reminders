@@ -16,7 +16,7 @@
     <main class="container">
         
         <section id="view-today" class="view">
-            <h1>Hoy 👋</h1>
+            <h1>Hoy </h1>
             
             <div class="streak-container" id="streakContainer">
                 <img src="fuego_naranja.gif" id="streakIcon" alt="Fuego" class="pixel-fire">
@@ -28,44 +28,85 @@
             </div>
             <span id="progressText">0% completado</span>
 
-            <div class="filter-container">
-                <button class="filter-chip active" data-filter="all">Todas</button>
-                <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
-                <button class="filter-chip" data-filter="🗄️">🗄️ BD</button>
-                <button class="filter-chip" data-filter="⚛️">⚛️ Física</button>
-                <button class="filter-chip" data-filter="💻">💻 Código</button>
-                <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
-            </div>
-            <div class="input-group" style="margin-top: 10px;">
-        <input type="text" id="taskInputToday" placeholder="Añadir tarea rápida..." autocomplete="off">
-        <button id="addBtnToday" style="background-color: var(--pastel-green); color: #2D5D39;">+</button>
+   <div class="filter-container" style="margin-bottom: 15px;">
+    <button class="filter-chip active" data-filter="all">🏠 Todas</button>
+    <button class="filter-chip" data-filter="📝">📝 General</button>
+    <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
+    <button class="filter-chip" data-filter="🗄️">🗄️ BD</button>
+    <button class="filter-chip" data-filter="⚛️">⚛️ Física</button>
+    <button class="filter-chip" data-filter="💻">💻 Código</button>
+    <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
+</div>
+
+<div class="input-group">
+    <input type="text" id="taskInputToday" placeholder="Añadir tarea rápida..." autocomplete="off">
+    <button id="addBtnToday" style="background-color: var(--pastel-green); color: #2D5D39;">+</button>
+</div>
+<h3 class="section-subtitle">Tareas pendientes</h3>
+    <div id="taskList" class="list-container"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+        <h3 class="section-subtitle">Tareas completadas</h3>
+        <button id="toggleCompletedBtn" class="btn-text" style="font-size: 12px;">Mostrar/Ocultar</button>
     </div>
+    <div id="completedTaskList" class="list-container" style="display: none;"></div>
+
+
+<div id="taskBottomSheet" class="bottom-sheet">
+    <div class="sheet-content">
+        <div class="sheet-handle"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <button id="closeSheetBtn" class="btn-text">← Volver</button>
+            <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
+        </div>
+        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="10"></textarea>
+    </div>
+</div>
+
+
+
+  
 
 
     
     <div class="filter-container"> </div>
 
             <section class="panel">
-                <h3>✅ Tareas del Día</h3>
+                <h3>Tareas del Día</h3>
                 <div id="taskList" class="list-container"></div>
             </section>
         </section>
 
-        <section id="view-reminders" class="view" style="display:none;">
-            <h2>Recordatorios ⏰</h2>
+      <section id="view-notes" class="view" style="display:none;">
+    <h1>Notas</h1>
+    
+    <div id="notesList" class="list-container">
+        </div>
 
-            <div class="category-selector">
-                <span class="cat-chip selected" data-emoji="📝">📝 General</span>
-                <span class="cat-chip" data-emoji="🌐">🌐 Redes</span>
-                <span class="cat-chip" data-emoji="🗄️">🗄️ BD</span>
-                <span class="cat-chip" data-emoji="⚛️">⚛️ Física</span>
-                <span class="cat-chip" data-emoji="💻">💻 Código</span>
-                <span class="cat-chip" data-emoji="🎮">🎮 Ocio</span>
-            </div>
+   
+</section>
+
+<section id="view-notes-editor" class="view" style="display:none; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button id="cancelNoteBtn" class="btn-text" style="font-size: 18px;">← Volver</button>
+        <button id="addNoteBtn" style="background-color: var(--pastel-yellow); color: #856404; padding: 8px 20px; border-radius: 20px; font-weight: bold;">Guardar</button>
+    </div>
+    
+    <input type="text" id="noteTitleInput" placeholder="Título" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 24px; font-weight: 800; outline: none; margin-bottom: 15px; color: var(--text-main);">
+
+    <div class="editor-container" style="background: transparent; padding: 0;">
+        <textarea id="noteInput" placeholder="Empieza a escribir tu nota..." rows="15" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 16px; resize: none; outline: none; line-height: 1.6; color: var(--text-main);"></textarea>
+    </div>
+</section>
+
+        <section id="view-reminders" class="view" style="display:none;">
+            <h2>Recordatorios </h2>
+
+          
             
 
             <div class="input-group">
-                <input type="text" id="taskInput" placeholder="Ej: Llamar a mamá 18:00" autocomplete="off">
+                <input type="text" id="taskInput"  autocomplete="off">
                 <button id="addBtn">Fijar</button>
                 <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
             </div>
@@ -83,8 +124,8 @@
         </section>
 
       <section id="view-profile" class="view" style="display:none;">
-        <h2>Mi Perfil 👤</h2>
-    <h2>Tu Rendimiento 📊</h2>
+        <h2> 👤 Mi Perfil </h2>
+    <h2>Tu Rendimiento </h2>
     <div id="permission-status-card" class="status-card" style="margin-bottom: 20px;">
     <div class="status-header">
         <span id="status-icon">🔍</span>
@@ -130,6 +171,10 @@
             <span>⏰</span>
             Alarmas
         </button>
+        <button class="nav-item" data-view="view-notes">
+        <span>🗒️</span>Notas
+    </button>
+        
         <button class="nav-item" data-view="view-profile">
             <span>📊</span>
             Perfil
@@ -146,9 +191,22 @@
             </div>
         </div>
     </div>
+    <div id="actionMenu" class="context-menu-overlay">
+    <div class="menu-content">
+        <button id="menuCopyBtn" class="menu-item">📋 Copiar texto</button>
+        <button id="menuEditBtn" class="menu-item">✏️ Editar</button>
+        <button id="menuDeleteBtn" class="menu-item delete">🗑️ Eliminar </button>
+        <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px;">Cancelar</button>
+    </div>
+</div>
+ <button id="openNoteEditorBtn" class="fab-btn" style="display:none;">+</button>
 
     <script src="app.js"></script>
     <script src="capacitor.js"></script>
+   
+
+</body>
+</html>
 
 </body>
 </html>

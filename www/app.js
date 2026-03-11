@@ -7,6 +7,107 @@ const cancelBtn = document.getElementById('cancelBtn');
 // Variable global para el filtro actual
 let currentFilter = 'all';
 
+const noteInput = document.getElementById('noteInput');
+const addNoteBtn = document.getElementById('addNoteBtn');
+
+// Variable global para saber si estamos editando una nota existente
+let currentEditingNoteId = null;
+
+
+// Botones de navegación de notas
+const openNoteEditorBtn = document.getElementById('openNoteEditorBtn');
+const cancelNoteBtn = document.getElementById('cancelNoteBtn');
+
+let showCompleted = false;
+let currentEditingTaskId = null;
+
+document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
+    showCompleted = !showCompleted;
+    const container = document.getElementById('completedTaskList');
+    container.style.display = showCompleted ? 'block' : 'none';
+});
+
+// Abrir editor para nota nueva
+openNoteEditorBtn.addEventListener('click', () => {
+    currentEditingNoteId = null; // Reset para nota nueva
+    document.getElementById('noteInput').value = '';
+    switchNoteView('view-notes-editor');
+});
+
+// Cancelar y volver a la lista
+cancelNoteBtn.addEventListener('click', () => {
+    switchNoteView('view-notes');
+});
+
+// Función auxiliar para cambiar sub-vistas de notas
+document.getElementById('addNoteBtn').addEventListener('click', () => {
+    const title = document.getElementById('noteTitleInput').value.trim();
+    const content = document.getElementById('noteInput').value.trim();
+    
+    if (!title && !content) return; // No guardar notas vacías
+
+    let notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    
+    if (currentEditingNoteId) {
+        notes = notes.map(n => n.id === currentEditingNoteId ? { ...n, title, content } : n);
+    } else {
+        notes.push({ id: Date.now(), title, content });
+    }
+    
+    localStorage.setItem('notes', JSON.stringify(notes));
+    switchNoteView('view-notes'); 
+});
+
+// Función para cambiar de vista
+function switchNoteView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+    document.getElementById(viewId).style.display = 'block';
+    
+    // Controlamos el botón flotante también aquí (ocultarlo en el editor, mostrarlo en la lista)
+    const fab = document.getElementById('openNoteEditorBtn');
+    if (fab) fab.style.display = (viewId === 'view-notes') ? 'flex' : 'none';
+
+    if(viewId === 'view-notes') renderNotes();
+}
+
+
+
+// Función para abrir una nota existente
+window.openEditNote = (id) => {
+    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    const note = notes.find(n => n.id === id);
+    if (note) {
+        currentEditingNoteId = id;
+        document.getElementById('noteTitleInput').value = note.title || '';
+        document.getElementById('noteInput').value = note.content || '';
+        switchNoteView('view-notes-editor');
+    }
+};
+
+// ==========================================
+// SÚPER CONTROLADOR: FILTRA Y ASIGNA CATEGORÍA
+// ==========================================
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        // 1. Quitar color a los demás y dárselo al que tocaste
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        // 2. Actualizar la variable que FILTRA las tareas visualmente
+        currentFilter = chip.dataset.filter;
+
+        // 3. Asignar el emoji para GUARDAR nuevas tareas. 
+        // Si tocaste "Todas", las nuevas tareas serán "General 📝"
+        selectedEmoji = currentFilter === 'all' ? '📝' : currentFilter;
+
+        // 4. Refrescar la lista de la pantalla inmediatamente
+        renderAll();
+        
+        // 5. Devolver el foco al input para que sigas escribiendo rápido
+        const inputHoy = document.getElementById('taskInputToday');
+        if (inputHoy) inputHoy.focus();
+    });
+});
 
 
 
@@ -40,22 +141,6 @@ document.addEventListener('DOMContentLoaded', requestNotificationPermission);
 
 
 
-// Eventos para los chips de filtro
-document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-        // 1. Quitar la clase 'active' de todos los chips
-        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-        
-        // 2. Poner 'active' al que acabamos de tocar
-        chip.classList.add('active');
-        
-        // 3. Guardar el emoji o 'all' en la variable
-        currentFilter = chip.dataset.filter;
-        
-        // 4. Refrescar la pantalla
-        renderAll();
-    });
-});
 
 
     // 2. INICIO, SERVICE WORKER Y TEMA OSCURO
@@ -71,15 +156,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-
-// 3. CATEGORÍAS (EMOJIS)
-document.querySelectorAll('.cat-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
-        selectedEmoji = chip.dataset.emoji;
-    });
-});
 
 
 addBtn.addEventListener('click', async () => {
@@ -123,7 +199,43 @@ async function requestPermissions() {
 }
 requestPermissions();
 
-// 3. Función procesarAlarma Corregida y Robusta
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function procesarAlarma(value, match) {
     let horas = parseInt(match[1]);
     let minutos = match[2] ? parseInt(match[2]) : 0;
@@ -134,169 +246,166 @@ async function procesarAlarma(value, match) {
 
     const fullTime = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
     let text = value.replace(match[0], '').trim();
-    if (text.startsWith(selectedEmoji)) text = text.substring(selectedEmoji.length).trim();
     if (!text) text = "Recordatorio";
 
-    // Guardar en LocalStorage para la lista visual
     const idUnico = Math.floor(Math.random() * 1000000);
     let list = JSON.parse(localStorage.getItem('reminders') || '[]');
-    list.push({ id: idUnico, text, time: fullTime, emoji: selectedEmoji, notified: false });
+    
+    // Forzamos el emoji ⏰ ya que esta sección ya no tiene selector
+    list.push({ id: idUnico, text, time: fullTime, emoji: "⏰", notified: false });
     localStorage.setItem('reminders', JSON.stringify(list));
 
-    // --- NOTIFICACIÓN NATIVA (Para cuando el móvil está apagado) ---
-   // ... dentro de procesarAlarma ...
-const Notifications = getLocalNotifications();
+    const Notifications = getLocalNotifications();
+    if (Notifications) {
+        const fechaAlarma = new Date();
+        fechaAlarma.setHours(horas, minutos, 0, 0);
+        if (fechaAlarma < new Date()) fechaAlarma.setDate(fechaAlarma.getDate() + 1);
 
-if (Notifications) {
-    const fechaAlarma = new Date();
-    fechaAlarma.setHours(horas, minutos, 0, 0);
-    if (fechaAlarma < new Date()) fechaAlarma.setDate(fechaAlarma.getDate() + 1);
-
-    try {
-        await Notifications.schedule({
-            notifications: [{
-                title: "🔔 " + (selectedEmoji || "Aviso"),
-                body: text,
-                id: idUnico,
-                schedule: { 
-                    at: fechaAlarma, 
-                    allowWhileIdle: true, 
-                    exact: true 
-                },
-                importance: 5,
-                sound: 'res://platform_default',
-            }]
-        });
-        console.log("Alarma programada nativamente");
-    } catch (err) {
-        console.error("Fallo al programar nativa:", err);
+        try {
+            await Notifications.schedule({
+                notifications: [{
+                    title: "🔔 Aviso Importante", // Título limpio sin emoji dinámico
+                    body: text,
+                    id: idUnico,
+                    schedule: { at: fechaAlarma, allowWhileIdle: true, exact: true },
+                    importance: 5,
+                    sound: 'res://platform_default',
+                }]
+            });
+        } catch (err) {
+            console.error("Fallo al programar nativa:", err);
+        }
     }
-}
 }
 requestNotificationPermission();
 
-// 6. PROCESAR TAREAS (Con tu filtro anti-duplicados)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function procesarTarea(value) {
     let text = value.trim();
-
-    // --- APLICAMOS EL MISMO FILTRO AQUÍ ---
-    if (text.startsWith(selectedEmoji)) {
-        text = text.substring(selectedEmoji.length).trim();
-    }
-    if (!text) text = "Nueva tarea";
+    if (!text) return; // Si no hay texto, no hacemos nada
 
     let list = JSON.parse(localStorage.getItem('tasks') || '[]');
     
-    // Bonus: Ahora también puedes editar las tareas sin hora
-    if (editId !== null) {
-        list = list.map(t => t.id === editId ? { ...t, text, emoji: selectedEmoji } : t);
-    } else {
-        list.push({ id: Date.now(), text, emoji: selectedEmoji, completed: false });
-        
-        let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
-        localStorage.setItem('totalCreatedToday', total + 1);
-    }
+    // Guardamos el texto puro, pero le asignamos el emoji que teníamos en memoria
+    list.push({ id: Date.now(), text: text, emoji: selectedEmoji, completed: false });
+    
+    let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+    localStorage.setItem('totalCreatedToday', total + 1);
     
     localStorage.setItem('tasks', JSON.stringify(list));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 7. RENDERIZADO GENERAL
 function renderAll() {
     renderList('reminders', 'reminderList', true);
     renderList('tasks', 'taskList', false);
+    renderNotes();
     updateProgress();
-
-
-// ACTUALIZA TU NAVEGACIÓN para que llame a renderStats
-document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-        // ... tu código de cambio de vista ...
-        if(btn.dataset.view === 'view-profile') renderStats();
-    });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 function renderList(key, elementId, isAlarm) {
     let list = JSON.parse(localStorage.getItem(key) || '[]');
     
-    // 1. Aplicamos el filtro si no estamos en "Todas"
-    if (currentFilter !== 'all') {
+    // --- CORRECCIÓN: Aplicar el filtro de categoría ---
+    if (key === 'tasks' && currentFilter !== 'all') {
         list = list.filter(item => item.emoji === currentFilter);
     }
 
-    const container = document.getElementById(elementId);
-    if (!container) return; // Seguridad por si el contenedor no existe en la vista actual
-
-    // 2. LÓGICA DEL EMPTY STATE
-    if (list.length === 0) {
-        const icon = isAlarm ? "📭" : "🗡️";
-        const message = isAlarm 
-            ? "No hay alarmas programadas." 
-            : "¡Todo limpio! Ni un solo demonio a la vista.";
-            
-        container.innerHTML = `
-            <div class="empty-state">
-                <span class="empty-icon">${icon}</span>
-                <p>${message}</p>
-            </div>
-        `;
-        return; 
+    // Si no son alarmas, filtramos por completadas/pendientes
+    if (!isAlarm && key === 'tasks') {
+        const pending = list.filter(t => !t.completed);
+        const completed = list.filter(t => t.completed);
+        
+        drawTasks(pending, 'taskList', false, key);
+        drawTasks(completed, 'completedTaskList', true, key);
+    } else {
+        drawTasks(list, elementId, isAlarm, key);
     }
+}
 
-    // 3. Renderizado sin el botón de editar (✎)
+function drawTasks(list, containerId, isCompletedOrAlarm, key) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
     container.innerHTML = list.map(item => `
-        <div class="reminder-card ${isAlarm ? 'alarm-style' : ''}">
+        <div class="reminder-card ${item.completed ? 'completed-task' : ''}" 
+             data-id="${item.id}" data-key="${key}" data-text="${(item.text || '').replace(/"/g, '&quot;')}"
+             onclick="openTaskSheet(${item.id})">
             <div class="card-info">
                 <span>${item.emoji || '📝'}</span>
-                ${isAlarm ? `<strong class="time-badge">${item.time}</strong>` : ''}
-                <span>${item.text}</span>
+                <span class="task-text-content">${item.text}</span>
             </div>
             <div class="actions">
-                ${!isAlarm ? `<button onclick="completeTask(${item.id})" class="btn-check">✓</button>` : ''}
-                
-                <button onclick="deleteItem('${key}', ${item.id})" class="btn-delete">✕</button>
+                <button onclick="event.stopPropagation(); toggleTaskComplete(${item.id})" class="btn-check">
+                    ${item.completed ? '↩️' : '✓'}
+                </button>
             </div>
         </div>
     `).join('');
+    
+    attachLongPressEvents();
 }
-
-
-
-// 8. FUNCIONES DE APOYO
 window.deleteItem = (key, id) => {
     let list = JSON.parse(localStorage.getItem(key) || '[]');
     list = list.filter(i => i.id !== id);
@@ -319,13 +428,15 @@ window.completeTask = (id) => {
 
 
 
+
+
 function resetState() {
     editId = null;
     selectedEmoji = "📝";
     taskInput.value = '';
     addBtn.innerText = "Fijar";
     cancelBtn.style.display = "none";
-    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+    
 }
 
 // 9. BARRA DE PROGRESO
@@ -361,14 +472,8 @@ renderAll();
 
 
 
-// --- MEJORA 2: RENDERIZADO CON URGENCIA ---
 
-function resetEmoji() {
-    selectedEmoji = "📝";
-    document.querySelectorAll('.cat-chip').forEach(chip => {
-        chip.classList.remove('selected');
-    });
-}
+
 
 // Función auxiliar para calcular urgencia
 function calcularDiferenciaMinutos(h1, h2) {
@@ -537,30 +642,53 @@ navigator.serviceWorker.addEventListener('message', (event) => {
         renderAll();
         alert("Pospuesto 5 minutos");
     }
-});
+});             
 
 
-document.querySelectorAll('.cat-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-        const newEmoji = chip.dataset.emoji;
-        let currentText = taskInput.value.trim();
 
-        // 1. Deseleccionar todos los chips y seleccionar el actual
-        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
 
-        // 2. Eliminar el emoji anterior del texto (si existe)
-        // `selectedEmoji` aún tiene el valor *antes* de este clic
-        if (currentText.startsWith(selectedEmoji)) {
-            currentText = currentText.substring(selectedEmoji.length).trim();
-        }
 
-        // 3. Actualizar el emoji global y poner el nuevo emoji al principio del texto
-        selectedEmoji = newEmoji;
-        taskInput.value = `${selectedEmoji} ${currentText}`.trim();
-        taskInput.focus();
-    });
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Al guardar (addBtn), usa selectedEmoji como parte del texto o como una propiedad nueva.
 // CONTROLADOR DEL TEMA (Oscuro / Claro)
@@ -729,6 +857,12 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
         document.getElementById(targetView).style.display = 'block';
 
+        // --- RECUPERAMOS EL BOTÓN FLOTANTE ---
+        const fab = document.getElementById('openNoteEditorBtn');
+        if (fab) {
+            fab.style.display = (targetView === 'view-notes') ? 'flex' : 'none';
+        }
+
         // 4. ¡AQUÍ ESTÁ EL TRUCO! 
         // Solo si el usuario tocó el botón de perfil, cargamos las estadísticas
         if (targetView === 'view-profile') {
@@ -794,21 +928,253 @@ addBtnToday.addEventListener('click', () => {
     const value = taskInputToday.value.trim();
     if (!value) return;
 
-    // Usamos tu función existente para tareas simples
+    // 1. Guardar la tarea (tomará el selectedEmoji automáticamente)
     procesarTarea(value);
 
-    // Limpiamos el input y refrescamos la pantalla
+    // 2. Limpiar solo el cuadro de texto (Mantiene la categoría que elegiste)
     taskInputToday.value = '';
+    
+    // 3. Refrescar pantalla
     renderAll();
-    
-    // Feedback visual opcional: racha y progreso
     updateProgress(); 
-
-    
 });
-
 // También permitir añadir con la tecla "Enter" en ese input
 taskInputToday.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addBtnToday.click();
 });
 
+
+
+// ==========================================
+// LÓGICA DE GESTOS TÁCTILES (SWIPE)
+// ==========================================
+let selectedTaskData = null; // Guardará la info de la tarea presionada
+
+function attachLongPressEvents() {
+    const cards = document.querySelectorAll('.reminder-card');
+
+    cards.forEach(card => {
+        let timer;
+        let isLongPress = false;
+        let startY = 0; // Guardamos dónde empezó el toque verticalmente
+        let hasMoved = false; // Flag para saber si hubo movimiento
+
+        card.addEventListener('touchstart', (e) => {
+            isLongPress = false;
+            hasMoved = false;
+            startY = e.touches[0].clientY; // Registramos la posición inicial Y
+            
+            card.classList.add('pressing');
+            
+            timer = setTimeout(() => {
+                isLongPress = true;
+                showActionMenu(card);
+                card.classList.remove('pressing');
+            }, 600); 
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            const currentY = e.touches[0].clientY;
+            // Si el dedo se mueve más de 10 píxeles, es un scroll
+            if (Math.abs(currentY - startY) > 10) {
+                hasMoved = true;
+                clearTimeout(timer); // Cancelamos el menú de borrar
+                card.classList.remove('pressing'); // Quitamos el efecto visual
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchend', () => {
+            clearTimeout(timer);
+            card.classList.remove('pressing');
+            
+            // SOLO abrimos la nota si:
+            // 1. No fue una pulsación larga
+            // 2. ¡Y NO HUBO MOVIMIENTO de scroll!
+            if (!isLongPress && !hasMoved) {
+                const id = parseInt(card.dataset.id);
+                const key = card.dataset.key;
+                
+                if (key === 'notes') {
+                    openEditNote(id);
+                }
+            }
+        });
+    });
+}
+
+function showActionMenu(card) {
+    selectedTaskData = {
+        id: parseInt(card.dataset.id),
+        key: card.dataset.key,
+        text: card.dataset.text
+    };
+    const id = parseInt(card.dataset.id);
+    const key = card.dataset.key;
+    let text = card.dataset.text;
+
+    // CORRECCIÓN: Si es una nota, buscamos el contenido real en la base de datos
+    // porque el atributo data-text puede no estar presente o estar incompleto.
+    if (key === 'notes') {
+        const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        const note = notes.find(n => n.id === id);
+        if (note) text = note.content; 
+    }
+
+    selectedTaskData = { id, key, text };
+    document.getElementById('actionMenu').classList.add('active');
+}
+
+// Botones del menú
+document.getElementById('menuCancelBtn').onclick = () => {
+    document.getElementById('actionMenu').classList.remove('active');
+};
+
+document.getElementById('menuDeleteBtn').onclick = () => {
+    if (selectedTaskData) {
+        // 1. Buscamos la tarjeta física en la pantalla por su ID
+        const cardToAnimate = document.querySelector(`.reminder-card[data-id="${selectedTaskData.id}"]`);
+        
+        if (cardToAnimate) {
+            // 2. Activamos la animación de salida
+            cardToAnimate.classList.add('removing');
+            
+            // 3. Cerramos el menú
+            document.getElementById('actionMenu').classList.remove('active');
+
+            // 4. Esperamos a que termine la animación (400ms) para borrarla de verdad
+            setTimeout(() => {
+                deleteItem(selectedTaskData.key, selectedTaskData.id);
+            }, 400);
+        } else {
+            // Si por algo no la encuentra, borramos normal
+            deleteItem(selectedTaskData.key, selectedTaskData.id);
+            document.getElementById('actionMenu').classList.remove('active');
+        }
+    }
+};
+document.getElementById('menuEditBtn').onclick = () => {
+    if (selectedTaskData) {
+        editItem(selectedTaskData.key, selectedTaskData.id, selectedTaskData.text);
+        // Si es una NOTA, abrimos el editor de notas grande
+        if (selectedTaskData.key === 'notes') {
+            openEditNote(selectedTaskData.id);
+        } else {
+            // Si es una TAREA, usamos la edición simple en la barra inferior
+            editItem(selectedTaskData.key, selectedTaskData.id, selectedTaskData.text);
+        }
+        document.getElementById('actionMenu').classList.remove('active');
+    }
+};
+// Función para cargar la tarea en el cuadro de texto y activarla
+window.editItem = (key, id, text) => {
+    editId = id; // Guardamos el ID que estamos editando globalmente
+    editKey = key; // Guardamos si es task o reminder
+    
+    // Mandamos el texto al input principal
+    const input = document.getElementById('taskInputToday');
+    if (input) {
+        input.value = text;
+        input.focus();
+    }
+    
+    renderAll(); // Refresca para que la tarjeta vuelva a su lugar si cancelamos la edición
+};
+// Botón Copiar
+document.getElementById('menuCopyBtn').onclick = () => {
+    if (selectedTaskData) {
+        navigator.clipboard.writeText(selectedTaskData.text).then(() => {
+            // Opcional: podrías poner un alert o un toast aquí
+            console.log("Copiado al portapapeles");
+        });
+        document.getElementById('actionMenu').classList.remove('active');
+    }
+};
+
+document.getElementById('menuCopyBtn').onclick = () => {
+    if (selectedTaskData) {
+        // Copiar el texto al portapapeles nativo
+        navigator.clipboard.writeText(selectedTaskData.text).then(() => {
+            showCopyToast(); // Mostrar el círculo abajo
+        });
+        
+        // Cerrar el menú de opciones
+        document.getElementById('actionMenu').classList.remove('active');
+    }
+};
+function showCopyToast() {
+    let toast = document.querySelector('.copy-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'copy-toast';
+        toast.innerHTML = '<span>📋</span>Copiado';
+        document.body.appendChild(toast);
+    }
+    
+    // Pequeño truco para reiniciar la animación si se pulsa varias veces
+    toast.classList.remove('show');
+    void toast.offsetWidth; // Forzar redibujado
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 1500);
+}
+
+function renderNotes() {
+    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    const container = document.getElementById('notesList');
+    if (!container) return;
+
+    if (notes.length === 0) {
+        container.innerHTML = `<div class="empty-state"><span>🗒️</span><p>No tienes notas guardadas.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = notes.map(n => `
+       <div class="note-card reminder-card" data-id="${n.id}" data-key="notes" data-text="${n.content.replace(/"/g, '&quot;')}">
+        <div class="card-info">
+            <div style="font-weight: 400; font-size: 16px; margin-bottom: -100px;">${n.title || 'Sin título'}</div>
+            <div class="task-text-content" style="font-size: 14px; opacity: 0.8;">${n.content}</div>
+        </div>
+    </div>
+    `).join('');
+
+    // Reutilizamos tu función de pulsación larga
+    attachLongPressEvents(); 
+}
+
+function openTaskSheet(id) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    currentEditingTaskId = id;
+    document.getElementById('sheetTaskInput').value = task.text;
+    document.getElementById('sheetCategoryLabel').innerText = task.emoji || '📝';
+    document.getElementById('taskBottomSheet').classList.add('active');
+}
+
+// AUTO-GUARDADO AL CERRAR
+document.getElementById('closeSheetBtn').addEventListener('click', () => {
+    saveTaskFromSheet();
+});
+
+function saveTaskFromSheet() {
+    const newText = document.getElementById('sheetTaskInput').value.trim();
+    if (currentEditingTaskId && newText) {
+        let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        tasks = tasks.map(t => t.id === currentEditingTaskId ? { ...t, text: newText } : t);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+    document.getElementById('taskBottomSheet').classList.remove('active');
+    renderAll();
+}
+
+// Función para marcar como completada
+window.toggleTaskComplete = (id) => {
+    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderAll();
+};

@@ -12,6 +12,7 @@ const addNoteBtn = document.getElementById('addNoteBtn');
 
 // Variable global para saber si estamos editando una nota existente
 let currentEditingNoteId = null;
+let selectedTaskData = null; // Guardará la info de la tarea presionada
 
 
 // Botones de navegación de notas
@@ -20,6 +21,8 @@ const cancelNoteBtn = document.getElementById('cancelNoteBtn');
 
 let showCompleted = false;
 let currentEditingTaskId = null;
+let currentEditingTaskKey = 'tasks'; // Nueva variable para saber qué lista editamos
+
 
 document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
     showCompleted = !showCompleted;
@@ -139,6 +142,24 @@ document.addEventListener('DOMContentLoaded', requestNotificationPermission);
 
 
 
+function resetState() {
+    editId = null;
+    selectedEmoji = "📝"; // Importante para que la siguiente tarea no use el emoji de la anterior
+    taskInput.value = "";
+    addBtn.innerText = "Fijar";
+    addBtn.style.backgroundColor = ""; // Limpia el color si estabas editando
+    cancelBtn.style.display = "none";
+}
+
+// Asegúrate de que el evento esté justo debajo
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', resetState);
+}
+
+
+
+
+
 
 
 
@@ -167,18 +188,23 @@ addBtn.addEventListener('click', async () => {
 
     try {
         if (match) {
+            // Si hay hora, es una alarma válida
             await procesarAlarma(value, match);
+            taskInput.classList.remove('input-error'); // Quitamos error si existía
         } else {
-            procesarTarea(value); // Esta función no necesita ser async si no usa plugins
+            // ERROR: Si estamos en Recordatorios, EXIGIMOS una hora
+            // En lugar de llamar a procesarTarea, avisamos al usuario
+            taskInput.classList.add('input-error');
+            console.log("Error: Se requiere una hora para fijar un recordatorio.");
+            return; // Detenemos la ejecución aquí
         }
     } catch (error) {
         console.error("Error en el flujo:", error);
     }
 
-    resetState(); //
-    renderAll();  //
+    resetState(); 
+    renderAll();  
 });
-
 // 5. PROCESAR ALARMAS
 // 5. PROCESAR ALARMAS (Con tu filtro anti-duplicados)
 // Importamos la herramienta nativa (Capacitor lo hace posible)
@@ -362,6 +388,7 @@ function renderAll() {
     renderList('tasks', 'taskList', false);
     renderNotes();
     updateProgress();
+    updateComboUI();
 }
 
 function renderList(key, elementId, isAlarm) {
@@ -384,6 +411,30 @@ function renderList(key, elementId, isAlarm) {
     }
 }
 
+
+// Función para marcar como completada
+// Función para marcar como completada (CON CONTADOR)
+window.toggleTaskComplete = (id) => {
+    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    let completedDelta = 0;
+
+    tasks = tasks.map(t => {
+        if (t.id === id) {
+            const newState = !t.completed;
+            // Si la tarea pasa a estar completada, sumamos 1. Si se desmarca, restamos 1.
+            completedDelta = newState ? 1 : -1;
+            return { ...t, completed: newState };
+        }
+        return t;
+    });
+
+    // Actualizar el contador de completadas para el fuego
+    let currentDone = parseInt(localStorage.getItem('completedToday') || 0);
+    localStorage.setItem('completedToday', Math.max(0, currentDone + completedDelta));
+
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderAll(); // Esto refrescará la lista y el fuego
+};
 function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -391,7 +442,7 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     container.innerHTML = list.map(item => `
         <div class="reminder-card ${item.completed ? 'completed-task' : ''}" 
              data-id="${item.id}" data-key="${key}" data-text="${(item.text || '').replace(/"/g, '&quot;')}"
-             onclick="openTaskSheet(${item.id})">
+             onclick="openTaskSheet(${item.id}, '${key}')">
             <div class="card-info">
                 <span>${item.emoji || '📝'}</span>
                 <span class="task-text-content">${item.text}</span>
@@ -430,39 +481,30 @@ window.completeTask = (id) => {
 
 
 
-function resetState() {
-    editId = null;
-    selectedEmoji = "📝";
-    taskInput.value = '';
-    addBtn.innerText = "Fijar";
-    cancelBtn.style.display = "none";
-    
-}
 
 // 9. BARRA DE PROGRESO
 function updateProgress() {
-    const total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
-    const done = parseInt(localStorage.getItem('completedToday') || 0);
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const total = tasks.length;
+    
+    // Contamos cuántas tareas tienen "completed: true"
+    const done = tasks.filter(t => t.completed).length;
+    
     const percent = total === 0 ? 0 : Math.round((done / total) * 100);
     
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
 
-    progressBar.style.width = percent + "%";
-    progressText.innerText = `${percent}% completado (${done}/${total})`;
+    if (progressBar) {
+        progressBar.style.width = percent + "%";
+        // Cambiar colores según progreso
+        if (percent < 40) progressBar.style.backgroundColor = "#ff5252";
+        else if (percent < 80) progressBar.style.backgroundColor = "#ffd740";
+        else progressBar.style.backgroundColor = "#00e676";
+    }
 
-    // Usamos 'background' a secas para aplastar cualquier degradado previo del CSS
-    if (percent === 0) {
-        progressBar.style.background = "transparent";
-    } else if (percent < 40) {
-        progressBar.style.background = "#ff5252"; // Rojo
-        progressText.style.color = "white";
-    } else if (percent < 80) {
-        progressBar.style.background = "#ffd740"; // Amarillo
-        progressText.style.color = "black";
-    } else {
-        progressBar.style.background = "#00e676"; // Verde
-        progressText.style.color = "black";
+    if (progressText) {
+        progressText.innerText = `${percent}% completado (${done}/${total})`;
     }
 }
 
@@ -615,15 +657,7 @@ async function checkSystemHealth() {
 
 // 1. Lleva el recordatorio al input principal
 
-function resetState() {
-    editId = null;
-    addBtn.innerText = "Fijar";
-    cancelBtn.style.display = "none";
-    taskInput.value = "";
-    addBtn.style.backgroundColor = "";
-}
 
-cancelBtn.addEventListener('click', resetState);
 
 // 2. Modifica el evento del addBtn para que sepa si está creando o editando
 
@@ -838,6 +872,13 @@ function updateComboUI() {
 // Ejecutar revisión visual al cargar la página
 updateComboUI();
 
+const openTaskSheetBtn = document.getElementById('openTaskSheetBtn');
+if (openTaskSheetBtn) {
+    openTaskSheetBtn.addEventListener('click', () => {
+        openTaskSheet(null); // Abrir en modo "Nueva Tarea"
+    });
+}
+
 
 
 
@@ -856,6 +897,21 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         // 3. Ocultamos todas las secciones y mostramos la que toca
         document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
         document.getElementById(targetView).style.display = 'block';
+
+        
+        const fabTask = document.getElementById('openTaskSheetBtn');
+        const fabNote = document.getElementById('openNoteEditorBtn');
+        // Solo mostrar el botón + de tareas en la vista 'Hoy'
+        if (fabTask) fabTask.style.display = (targetView === 'view-today') ? 'flex' : 'none';
+        
+        // Solo mostrar el botón + de notas en la vista 'Notas'
+        if (fabNote) fabNote.style.display = (targetView === 'view-notes') ? 'flex' : 'none';
+        const saveTaskBtn = document.getElementById('saveTaskBtn');
+if (saveTaskBtn) {
+    saveTaskBtn.addEventListener('click', saveTaskFromSheet);
+}
+
+
 
         // --- RECUPERAMOS EL BOTÓN FLOTANTE ---
         const fab = document.getElementById('openNoteEditorBtn');
@@ -920,40 +976,23 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 
 
-// Lógica para el botón de añadir tarea rápida en la pantalla de INICIO
-const addBtnToday = document.getElementById('addBtnToday');
-const taskInputToday = document.getElementById('taskInputToday');
 
-addBtnToday.addEventListener('click', () => {
-    const value = taskInputToday.value.trim();
-    if (!value) return;
-
-    // 1. Guardar la tarea (tomará el selectedEmoji automáticamente)
-    procesarTarea(value);
-
-    // 2. Limpiar solo el cuadro de texto (Mantiene la categoría que elegiste)
-    taskInputToday.value = '';
-    
-    // 3. Refrescar pantalla
-    renderAll();
-    updateProgress(); 
-});
-// También permitir añadir con la tecla "Enter" en ese input
-taskInputToday.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') addBtnToday.click();
-});
 
 
 
 // ==========================================
 // LÓGICA DE GESTOS TÁCTILES (SWIPE)
 // ==========================================
-let selectedTaskData = null; // Guardará la info de la tarea presionada
+
 
 function attachLongPressEvents() {
     const cards = document.querySelectorAll('.reminder-card');
 
     cards.forEach(card => {
+        // CORRECCIÓN: Si ya tiene eventos, no se los volvemos a poner
+        if (card.classList.contains('long-press-active')) return;
+        card.classList.add('long-press-active');
+
         let timer;
         let isLongPress = false;
         let startY = 0; // Guardamos dónde empezó el toque verticalmente
@@ -1070,6 +1109,7 @@ window.editItem = (key, id, text) => {
     editId = id; // Guardamos el ID que estamos editando globalmente
     editKey = key; // Guardamos si es task o reminder
     
+    
     // Mandamos el texto al input principal
     const input = document.getElementById('taskInputToday');
     if (input) {
@@ -1080,15 +1120,7 @@ window.editItem = (key, id, text) => {
     renderAll(); // Refresca para que la tarjeta vuelva a su lugar si cancelamos la edición
 };
 // Botón Copiar
-document.getElementById('menuCopyBtn').onclick = () => {
-    if (selectedTaskData) {
-        navigator.clipboard.writeText(selectedTaskData.text).then(() => {
-            // Opcional: podrías poner un alert o un toast aquí
-            console.log("Copiado al portapapeles");
-        });
-        document.getElementById('actionMenu').classList.remove('active');
-    }
-};
+
 
 document.getElementById('menuCopyBtn').onclick = () => {
     if (selectedTaskData) {
@@ -1144,16 +1176,37 @@ function renderNotes() {
     attachLongPressEvents(); 
 }
 
-function openTaskSheet(id) {
-    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
+// 1. Función para abrir el panel
+function openTaskSheet(id = null) {
+    const sheet = document.getElementById('taskBottomSheet');
+    const input = document.getElementById('sheetTaskInput');
+    const label = document.getElementById('sheetCategoryLabel');
+    const fabTask = document.getElementById('openTaskSheetBtn'); // El botón + verde
 
-    currentEditingTaskId = id;
-    document.getElementById('sheetTaskInput').value = task.text;
-    document.getElementById('sheetCategoryLabel').innerText = task.emoji || '📝';
-    document.getElementById('taskBottomSheet').classList.add('active');
+    if (id) {
+        // Modo edición
+        const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        currentEditingTaskId = id;
+        input.value = task.text;
+        label.innerText = task.emoji || '📝';
+    } else {
+        // Modo creación
+        currentEditingTaskId = null;
+        input.value = '';
+        label.innerText = selectedEmoji || '📝';
+    }
+
+    sheet.classList.add('active');
+    
+    // OCULTAR el botón + al abrir
+    if (fabTask) fabTask.style.display = 'none';
+
+    setTimeout(() => input.focus(), 300);
 }
+// Vincular el nuevo botón flotante de tareas
+document.getElementById('openTaskSheetBtn').addEventListener('click', () => openTaskSheet());
 
 // AUTO-GUARDADO AL CERRAR
 document.getElementById('closeSheetBtn').addEventListener('click', () => {
@@ -1162,19 +1215,32 @@ document.getElementById('closeSheetBtn').addEventListener('click', () => {
 
 function saveTaskFromSheet() {
     const newText = document.getElementById('sheetTaskInput').value.trim();
-    if (currentEditingTaskId && newText) {
+    const fabTask = document.getElementById('openTaskSheetBtn'); // El botón + verde
+    
+    if (newText) {
         let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        tasks = tasks.map(t => t.id === currentEditingTaskId ? { ...t, text: newText } : t);
+        if (currentEditingTaskId) {
+            tasks = tasks.map(t => t.id === currentEditingTaskId ? { ...t, text: newText } : t);
+        } else {
+            tasks.push({ id: Date.now(), text: newText, emoji: selectedEmoji, completed: false });
+            let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
+            localStorage.setItem('totalCreatedToday', total + 1);
+        }
         localStorage.setItem('tasks', JSON.stringify(tasks));
     }
+    
     document.getElementById('taskBottomSheet').classList.remove('active');
+    
+    // MOSTRAR el botón + de nuevo al cerrar (si estamos en la vista de hoy)
+    const currentView = document.querySelector('.nav-item.active').dataset.view;
+    if (fabTask && currentView === 'view-today') {
+        fabTask.style.display = 'flex';
+    }
+    
     renderAll();
 }
 
-// Función para marcar como completada
-window.toggleTaskComplete = (id) => {
-    let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    renderAll();
-};
+// 3. Vincular los eventos de los botones (Pon esto donde tengas tus otros listeners)
+
+// Asegúrate de que el botón de volver también cierre correctamente
+document.getElementById('closeSheetBtn').onclick = saveTaskFromSheet;

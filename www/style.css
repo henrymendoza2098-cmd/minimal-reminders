@@ -492,9 +492,9 @@ button:active { transform: scale(0.96); }
 
 /* Colores específicos para que sigan siendo Notion Pastel */
 .actions .btn-check {
-    background-color: var(--pastel-green) !important;
-    color: #2D5D39 !important;
-    border: 1px solid #C6E0C4;
+    background-color: white !important;
+    color: #353535 !important;
+    
 }
 
 .actions .btn-delete {
@@ -754,7 +754,7 @@ body.dark-mode .note-card {
     
     z-index: 9999; /* Por encima de absolutamente todo */
     border: 2px solid #F3E5BC;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    
     cursor: pointer;
 }
 /* Botón de texto simple para cancelar/volver */
@@ -824,6 +824,7 @@ body.dark-mode .note-card {
     z-index: 5000;
     display: none;
     align-items: flex-end;
+    transition: background 0.3s ease;
 }
 
 .sheet-content {
@@ -833,6 +834,16 @@ body.dark-mode .note-card {
     border-radius: 20px 20px 0 0;
     transform: translateY(100%);
     transition: transform 0.3s ease-out;
+    height: auto;
+    max-height: 85vh; /* Puede crecer hasta casi pantalla completa */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s ease;
+}
+.bottom-sheet.full-height .sheet-content {
+    height: 90vh;
+}
+#openTaskSheetBtn {
+    left:80%; /* Anulamos el centrado anterior si prefieres que esté a la derecha */
+    transform: none;
 }
 
 .bottom-sheet.active { display: flex; }
@@ -847,4 +858,24 @@ body.dark-mode .note-card {
     width: 100%; border: none; background: transparent;
     font-size: 16px; font-family: inherit; resize: none; outline: none;
     line-height: 1.6; color: var(--text-main);
+}
+
+/* Botón de guardar en el panel inferior */
+.btn-save-task {
+    background: rgb(207, 212, 207);
+    color: rgb(138, 133, 133);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    
+    padding: 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.btn-save-task:active {
+    transform: scale(0.9);
 }

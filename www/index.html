@@ -38,10 +38,7 @@
     <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
 </div>
 
-<div class="input-group">
-    <input type="text" id="taskInputToday" placeholder="Añadir tarea rápida..." autocomplete="off">
-    <button id="addBtnToday" style="background-color: var(--pastel-green); color: #2D5D39;">+</button>
-</div>
+
 <h3 class="section-subtitle">Tareas pendientes</h3>
     <div id="taskList" class="list-container"></div>
 
@@ -57,12 +54,15 @@
         <div class="sheet-handle"></div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <button id="closeSheetBtn" class="btn-text">← Volver</button>
-            <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
+                <button id="saveTaskBtn" class="btn-save-task">➔</button>
+            </div>
         </div>
         <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="10"></textarea>
     </div>
 </div>
-
 
 
   
@@ -71,10 +71,7 @@
     
     <div class="filter-container"> </div>
 
-            <section class="panel">
-                <h3>Tareas del Día</h3>
-                <div id="taskList" class="list-container"></div>
-            </section>
+            
         </section>
 
       <section id="view-notes" class="view" style="display:none;">
@@ -106,7 +103,7 @@
             
 
             <div class="input-group">
-                <input type="text" id="taskInput"  autocomplete="off">
+                <input type="text" id="taskInput" placeholder="Ejemplo: 10:30am" autocomplete="off">
                 <button id="addBtn">Fijar</button>
                 <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
             </div>
@@ -199,6 +196,7 @@
         <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px;">Cancelar</button>
     </div>
 </div>
+<button id="openTaskSheetBtn" class="fab-btn" style="display:none; background-color: var(--pastel-green); color: #6d6464;">+</button>
  <button id="openNoteEditorBtn" class="fab-btn" style="display:none;">+</button>
 
     <script src="app.js"></script>

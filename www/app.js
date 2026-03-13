@@ -24,6 +24,10 @@ let currentEditingTaskId = null;
 let currentEditingTaskKey = 'tasks'; // Nueva variable para saber qué lista editamos
 
 
+// 1. Registrar los tipos de acciones
+
+
+
 document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
     showCompleted = !showCompleted;
     const container = document.getElementById('completedTaskList');
@@ -213,6 +217,7 @@ addBtn.addEventListener('click', async () => {
 const isPushAvailable = typeof Capacitor !== 'undefined' && Capacitor.Plugins.LocalNotifications;
 
 // 2. Función para pedir permisos (Llamarla al cargar la app)
+// 1. Función para pedir permisos
 async function requestPermissions() {
     if (isPushAvailable) {
         try {
@@ -223,12 +228,72 @@ async function requestPermissions() {
         }
     }
 }
+
+// 2. Función para registrar los botones (Hecho/Posponer)
+// PASO 0: Registrar los botones para que el sistema operativo los conozca
+async function registerNotificationActions() {
+    const Notifications = getLocalNotifications();
+    if (Notifications) {
+        try {
+            await Notifications.registerActionTypes({
+                types: [
+                    {
+                        id: 'REMINDER_ACTIONS',
+                        actions: [
+                            { id: 'done', title: '✔️ Hecho' },
+                            { id: 'snooze', title: '⏰ Posponer 5 min' }
+                        ]
+                    }
+                ]
+            });
+            console.log("Tipos de acciones registrados correctamente");
+        } catch (e) {
+            console.error("Error registrando acciones:", e);
+        }
+    }
+}
+
+// LLAMADA IMPORTANTE: Ejecútala al cargar la app
+document.addEventListener('DOMContentLoaded', () => {
+    registerNotificationActions(); // Sin esto, los botones no salen
+    renderAll();
+});
 requestPermissions();
 
 
 
 
 
+// 3. Escuchar las acciones de la notificación
+const Notifications = getLocalNotifications();
+if (Notifications) {
+    Notifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        const reminderId = notificationAction.notification.extra.reminderId;
+        const actionId = notificationAction.actionId;
+
+        if (actionId === 'done') {
+            // SI LE DA A "HECHO": Borramos de la lista de recordatorios
+            console.log("Tarea marcada como hecha desde notificación");
+            window.deleteItem('reminders', reminderId); 
+        } 
+        else if (actionId === 'snooze') {
+            // SI LE DA A "POSPONER": Calculamos 5 minutos más
+            
+           const ahora = new Date();
+    ahora.setMinutes(ahora.getMinutes() + 5);
+    const nuevaHora = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    // Actualizamos el registro en el localStorage para que se vea en la lista
+    let list = JSON.parse(localStorage.getItem('reminders') || '[]');
+    list = list.map(r => r.id === reminderId ? { ...r, time: nuevaHora, notified: false } : r);
+    localStorage.setItem('reminders', JSON.stringify(list));
+    
+    // Opcional: Podrías llamar a procesarAlarma de nuevo con la nueva hora
+    renderAll();
+    console.log("Recordatorio pospuesto 5 minutos");
+        }
+    });
+}
 
 
 
@@ -288,22 +353,28 @@ async function procesarAlarma(value, match) {
         if (fechaAlarma < new Date()) fechaAlarma.setDate(fechaAlarma.getDate() + 1);
 
         try {
-            await Notifications.schedule({
-                notifications: [{
-                    title: "🔔 Aviso Importante", // Título limpio sin emoji dinámico
-                    body: text,
-                    id: idUnico,
-                    schedule: { at: fechaAlarma, allowWhileIdle: true, exact: true },
-                    importance: 5,
-                    sound: 'res://platform_default',
-                }]
-            });
+           // En tu función procesarAlarma...
+                await Notifications.schedule({
+                    notifications: [{
+                        title: "🔔 " + text, 
+                        body: "Recordatorio fijado a las " + fullTime,
+                        id: idUnico,
+                        schedule: { at: fechaAlarma, allowWhileIdle: true, exact: true },
+                        importance: 5,
+                        sound: 'res://platform_default',
+                        actionTypeId: 'REMINDER_ACTIONS', // <-- ESTA LÍNEA ES LA CLAVE
+                        extra: { reminderId: idUnico }    // Pasamos el ID para saber cuál borrar
+                    }]
+                });
         } catch (err) {
             console.error("Fallo al programar nativa:", err);
         }
     }
+    
 }
 requestNotificationPermission();
+
+
 
 
 
@@ -439,12 +510,37 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Lógica de "Empty State"
+    if (list.length === 0) {
+        let icon = "📝";
+        let text = "No hay tareas disponibles";
+
+        if (containerId === 'reminderList') {
+            icon = "🔔";
+            text = "No hay recordatorios configurados";
+        } else if (containerId === 'completedTaskList') {
+            icon = "✅";
+            text = "Aún no has completado tareas";
+        } else if (containerId === 'taskList' && currentFilter !== 'all') {
+            text = `Sin tareas en la categoría ${currentFilter}`;
+        }
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <span>${icon}</span>
+                <p>${text}</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Si hay items, dibujamos normal (ahora el CSS los pondrá alineados)
     container.innerHTML = list.map(item => `
         <div class="reminder-card ${item.completed ? 'completed-task' : ''}" 
-             data-id="${item.id}" data-key="${key}" data-text="${(item.text || '').replace(/"/g, '&quot;')}"
-             onclick="openTaskSheet(${item.id}, '${key}')">
+             data-id="${item.id}" data-key="${key}" 
+             onclick="openTaskSheet(${item.id})">
             <div class="card-info">
-                <span>${item.emoji || '📝'}</span>
+                <span class="category-emoji">${item.emoji || '📝'}</span>
                 <span class="task-text-content">${item.text}</span>
             </div>
             <div class="actions">
@@ -458,9 +554,23 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     attachLongPressEvents();
 }
 window.deleteItem = (key, id) => {
+    // 1. Borramos de la memoria local (lo que ya tenías)
     let list = JSON.parse(localStorage.getItem(key) || '[]');
     list = list.filter(i => i.id !== id);
     localStorage.setItem(key, JSON.stringify(list));
+
+    // 2. NUEVO: Cancelar la notificación nativa si estamos borrando un recordatorio
+    if (key === 'reminders') {
+        const Notifications = getLocalNotifications();
+        if (Notifications) {
+            // Le decimos a Android que olvide la notificación con este ID
+            Notifications.cancel({ 
+                notifications: [{ id: parseInt(id) }] 
+            });
+            console.log("Alarma cancelada en el sistema para el ID:", id);
+        }
+    }
+
     renderAll();
 };
 
@@ -726,27 +836,57 @@ navigator.serviceWorker.addEventListener('message', (event) => {
 
 // Al guardar (addBtn), usa selectedEmoji como parte del texto o como una propiedad nueva.
 // CONTROLADOR DEL TEMA (Oscuro / Claro)
-const themeToggle = document.getElementById('themeToggle');
-const body = document.body;
+// --- LÓGICA DEL MENÚ LATERAL ---
+const sideMenu = document.getElementById('sideMenu');
+const menuBtn = document.getElementById('menuBtn');
+const closeMenuBtn = document.getElementById('closeMenuBtn');
 
-// 1. Revisar si el usuario ya tenía el modo oscuro guardado
-if (localStorage.getItem('theme') === 'dark') {
-    body.classList.add('dark-mode');
+// Abrir menú
+menuBtn.onclick = () => {
+    // Para que la animación de entrada funcione, primero mostramos el bloque
+    sideMenu.style.display = 'block';
+    // Usamos un pequeño delay para que el navegador note el cambio y dispare la transición
+    setTimeout(() => sideMenu.classList.add('active'), 10);
+};
+
+// Cerrar menú (al darle a X o al fondo oscuro)
+const closeMenu = () => {
+    // 1. Iniciamos la animación de salida (el CSS se encarga del movimiento)
+    sideMenu.classList.remove('active');
+    
+    // 2. Esperamos a que termine la animación (400ms) para ocultar el contenedor por completo
+    setTimeout(() => {
+        if (!sideMenu.classList.contains('active')) {
+            sideMenu.style.display = 'none';
+        }
+    }, 400);
+};
+closeMenuBtn.onclick = closeMenu;
+sideMenu.onclick = (e) => { if (e.target === sideMenu) closeMenu(); };
+
+// Mover Lógica de TEMA OSCURO al nuevo botón del menú
+const themeToggleMenu = document.getElementById('themeToggleMenu');
+if (themeToggleMenu) {
+    themeToggleMenu.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        closeMenu(); // Cerramos el menú tras cambiar el tema
+    });
 }
 
-// 2. Evento del botón
-themeToggle.addEventListener('click', () => {
-    body.classList.toggle('dark-mode');
-    
-    // Guardar preferencia en localStorage
-    if (body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
+// Lógica para que los items del menú también cambien de vista
+document.querySelectorAll('.menu-item[data-view]').forEach(item => {
+    item.addEventListener('click', () => {
+        const targetView = item.dataset.view;
+        
+        // Simular clic en la barra de navegación inferior (si existe)
+        const navBtn = document.querySelector(`.nav-item[data-view="${targetView}"]`);
+        if (navBtn) navBtn.click();
+        
+        closeMenu();
+    });
 });
-// Al cargar la página:
-if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
 
 document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1158,21 +1298,35 @@ function renderNotes() {
     const container = document.getElementById('notesList');
     if (!container) return;
 
+    // 1. Mensaje de "No hay notas" con el nuevo estilo
     if (notes.length === 0) {
-        container.innerHTML = `<div class="empty-state"><span>🗒️</span><p>No tienes notas guardadas.</p></div>`;
+        container.innerHTML = `
+            <div class="empty-state">
+                <span>🗒️</span>
+                <p>No tienes notas guardadas.</p>
+            </div>`;
         return;
     }
 
+    // 2. Renderizado Compacto: Emoji al lado del texto
     container.innerHTML = notes.map(n => `
-       <div class="note-card reminder-card" data-id="${n.id}" data-key="notes" data-text="${n.content.replace(/"/g, '&quot;')}">
-        <div class="card-info">
-            <div style="font-weight: 400; font-size: 16px; margin-bottom: -100px;">${n.title || 'Sin título'}</div>
-            <div class="task-text-content" style="font-size: 14px; opacity: 0.8;">${n.content}</div>
+       <div class="note-card reminder-card" 
+            data-id="${n.id}" 
+            data-key="notes" 
+            data-text="${n.content.replace(/"/g, '&quot;')}"
+            onclick="window.openEditNote(${n.id})"> <div class="card-info" style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 18px;"></span> <div style="display: flex; flex-direction: column; overflow: hidden;">
+                <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${n.title || 'Sin título'}
+                </div>
+                <div class="task-text-content" style="font-size: 12px; opacity: 0.7;">
+                    ${n.content}
+                </div>
+            </div>
         </div>
     </div>
     `).join('');
 
-    // Reutilizamos tu función de pulsación larga
     attachLongPressEvents(); 
 }
 
@@ -1244,3 +1398,20 @@ function saveTaskFromSheet() {
 
 // Asegúrate de que el botón de volver también cierre correctamente
 document.getElementById('closeSheetBtn').onclick = saveTaskFromSheet;
+
+const initialHeight = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    const bottomNav = document.querySelector('.bottom-nav');
+    const currentHeight = window.innerHeight;
+
+    if (currentHeight < initialHeight * 0.8) {
+        // El teclado está abierto (la pantalla se redujo más de un 20%)
+        bottomNav.style.visibility = 'hidden';
+        bottomNav.style.opacity = '0';
+    } else {
+        // El teclado se cerró
+        bottomNav.style.visibility = 'visible';
+        bottomNav.style.opacity = '1';
+    }
+});

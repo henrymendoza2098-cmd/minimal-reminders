@@ -11,9 +11,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <button id="themeToggle" style="position: fixed; top: 15px; right: 15px; z-index: 1000; background: transparent; border: none; font-size: 20px; cursor: pointer;">🌓</button>
-
+   <button id="menuBtn" style="position: fixed; top: 15px; left: 15px; z-index: 1000; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-main);">☰</button>
+<div id="sideMenu" class="side-menu-overlay">
+    <div class="side-menu-content">
+        <div class="side-menu-header">
+            <h3>Solo Recordar 📝</h3>
+            <button id="closeMenuBtn" class="btn-text">✕</button>
+        </div>
+        
+        <div class="side-menu-body">
+            <div class="menu-item active" data-view="view-today"><span>🏠</span> Inicio (Hoy)</div>
+            <div class="menu-item" data-view="view-profile"><span>📊</span> Mi Perfil</div>
+            <div class="menu-item"><span>⭐</span> Tareas Importantes</div>
+            
+            <hr class="menu-divider">
+            
+            <div class="menu-item"><span>⚙️</span> Ajustes</div>
+            <div id="themeToggleMenu" class="menu-item"><span>🌓</span> Temas (Modo Oscuro)</div>
+            <div class="menu-item"><span>📱</span> Widget</div>
+            
+            <hr class="menu-divider">
+            
+            <div class="menu-item"><span>🌟</span> Calificar aplicación</div>
+            <div class="menu-item"><span>❓</span> Preguntas frecuentes</div>
+            <div class="menu-item"><span>📧</span> Contacto</div>
+            <div class="menu-item"><span>☕</span> Donar</div>
+        </div>
+        
+        <div class="side-menu-footer">
+            <p>Versión 1.0.0 (Beta)</p>
+        </div>
+    </div>
+</div>
     <main class="container">
+        
         
         <section id="view-today" class="view">
             <h1>Hoy </h1>

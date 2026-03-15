@@ -44,6 +44,7 @@
     </div>
 </div>
     <main class="container">
+     
         
         
         <section id="view-today" class="view">
@@ -58,6 +59,16 @@
                 <div id="progressBar" class="progress-bar"></div>
             </div>
             <span id="progressText">0% completado</span>
+
+
+        <div class="task-tools-nav">
+    <button id="openCalendarBtn">📅 Calen.</button>
+    <button id="addNewCategoryBtn">➕ Cat.</button>
+    <div class="search-box">
+        <input type="text" id="taskSearchInput" placeholder="Buscar...">
+        <span class="search-icon">🔍</span>
+    </div>
+</div>
 
    <div class="filter-container" style="margin-bottom: 15px;">
     <button class="filter-chip active" data-filter="all">🏠 Todas</button>
@@ -80,30 +91,36 @@
     <div id="completedTaskList" class="list-container" style="display: none;"></div>
 
 
-<div id="taskBottomSheet" class="bottom-sheet">
-    <div class="sheet-content">
-        <div class="sheet-handle"></div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <button id="closeSheetBtn" class="btn-text">← Volver</button>
-            
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
-                <button id="saveTaskBtn" class="btn-save-task">➔</button>
-            </div>
-        </div>
-        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="10"></textarea>
-    </div>
-</div>
 
 
-  
-
-
-    
-    <div class="filter-container"> </div>
-
-            
         </section>
+
+           <section id="view-calendar" class="view" style="display:none;">
+            
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+        <button id="closeCalendarBtn" class="btn-text" style="font-size: 20px;">← Volver</button>
+        <h2 style="margin: 0; font-size: 20px;">Calendario</h2>
+    </div>
+    
+    <div class="calendar-header">
+        <button id="prevMonth">＜</button>
+        <h3 id="currentMonthYear" style="margin:0; font-size: 16px;">Marzo 2026</h3>
+        <button id="nextMonth">＞</button>
+    </div>
+
+    <div id="calendar-container" class="calendar-grid">
+        </div>
+
+    <h3 id="selectedDateTitle" class="section-subtitle">Tareas del día</h3>
+    <div id="calendarTaskList" class="list-container"></div>
+    <div style="text-align: right; margin-top: 10px;">
+    <h3 c  class="section-subtitle">+ Agregar para este día</h3>
+        
+   
+</div>
+</section>
+
+
 
       <section id="view-notes" class="view" style="display:none;">
     <h1>Notas</h1>
@@ -186,6 +203,7 @@
     </div>
 </section>
 
+
     </main>
     
 
@@ -227,15 +245,26 @@
         <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px;">Cancelar</button>
     </div>
 </div>
-<button id="openTaskSheetBtn" class="fab-btn" style="display:none; background-color: var(--pastel-green); color: #6d6464;">+</button>
+<button id="openTaskSheetBtn" class="fab-btn" style="display:flex; background-color: var(--pastel-green); color: #6d6464;">+</button>
  <button id="openNoteEditorBtn" class="fab-btn" style="display:none;">+</button>
+ <div id="taskBottomSheet" class="bottom-sheet">
+    <div class="sheet-content">
+        <div class="sheet-handle"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <button id="closeSheetBtn" class="btn-text">← Volver</button>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
+                <button id="saveTaskBtn" class="btn-save-task">➔</button>
+            </div>
+        </div>
+        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="10"></textarea>
+    </div>
+</div>
 
     <script src="app.js"></script>
     <script src="capacitor.js"></script>
    
-
-</body>
-</html>
 
 </body>
 </html>

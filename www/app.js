@@ -18,10 +18,29 @@ let selectedTaskData = null; // Guardará la info de la tarea presionada
 // Botones de navegación de notas
 const openNoteEditorBtn = document.getElementById('openNoteEditorBtn');
 const cancelNoteBtn = document.getElementById('cancelNoteBtn');
+const getTodayStr = () => new Date().toLocaleDateString('es-ES');
+
+// Función que verifica si una fecha es anterior a hoy
+function isOverdue(dateStr) {
+    if (!dateStr) return false;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return false;
+    const taskDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Ignorar la hora, solo comparar día
+    return taskDate < today;
+}
 
 let showCompleted = false;
 let currentEditingTaskId = null;
 let currentEditingTaskKey = 'tasks'; // Nueva variable para saber qué lista editamos
+
+const getLocalNotifications = () => {
+    return (typeof Capacitor !== 'undefined' && Capacitor.Plugins.LocalNotifications) 
+           ? Capacitor.Plugins.LocalNotifications 
+           : null;
+};
+const Notifications = getLocalNotifications();
 
 
 // 1. Registrar los tipos de acciones
@@ -120,15 +139,11 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
 
 // Función para pedir permiso al arrancar la app
 // 1.5 VERIFICACIÓN DE CAPACITOR (No rompe el código si falla)
-const getLocalNotifications = () => {
-    return (typeof Capacitor !== 'undefined' && Capacitor.Plugins.LocalNotifications) 
-           ? Capacitor.Plugins.LocalNotifications 
-           : null;
-};
+
 
 // Función de permisos corregida
 async function requestNotificationPermission() {
-    const Notifications = getLocalNotifications();
+    
     if (Notifications) {
         try {
             const permission = await Notifications.requestPermissions();
@@ -232,7 +247,7 @@ async function requestPermissions() {
 // 2. Función para registrar los botones (Hecho/Posponer)
 // PASO 0: Registrar los botones para que el sistema operativo los conozca
 async function registerNotificationActions() {
-    const Notifications = getLocalNotifications();
+   
     if (Notifications) {
         try {
             await Notifications.registerActionTypes({
@@ -265,7 +280,7 @@ requestPermissions();
 
 
 // 3. Escuchar las acciones de la notificación
-const Notifications = getLocalNotifications();
+
 if (Notifications) {
     Notifications.addListener('localNotificationActionPerformed', (notificationAction) => {
         const reminderId = notificationAction.notification.extra.reminderId;
@@ -346,7 +361,7 @@ async function procesarAlarma(value, match) {
     list.push({ id: idUnico, text, time: fullTime, emoji: "⏰", notified: false });
     localStorage.setItem('reminders', JSON.stringify(list));
 
-    const Notifications = getLocalNotifications();
+    
     if (Notifications) {
         const fechaAlarma = new Date();
         fechaAlarma.setHours(horas, minutos, 0, 0);
@@ -464,6 +479,10 @@ function renderAll() {
 
 function renderList(key, elementId, isAlarm) {
     let list = JSON.parse(localStorage.getItem(key) || '[]');
+
+    const today = getTodayStr();
+
+   
     
     // --- CORRECCIÓN: Aplicar el filtro de categoría ---
     if (key === 'tasks' && currentFilter !== 'all') {
@@ -472,11 +491,30 @@ function renderList(key, elementId, isAlarm) {
 
     // Si no son alarmas, filtramos por completadas/pendientes
     if (!isAlarm && key === 'tasks') {
+        // PRIMERO filtramos por la fecha:
+        // - Las de hoy
+        // - Las que no tienen fecha
+        // - Las VENCIDAS (días anteriores) que aún NO están completadas
+        list = list.filter(t => 
+            t.date === today || !t.date || (!t.completed && isOverdue(t.date))
+        );
+
         const pending = list.filter(t => !t.completed);
         const completed = list.filter(t => t.completed);
         
         drawTasks(pending, 'taskList', false, key);
         drawTasks(completed, 'completedTaskList', true, key);
+        
+        // --- OCULTAR SECCIÓN DE COMPLETADAS SI ESTÁ VACÍA ---
+        const toggleBtn = document.getElementById('toggleCompletedBtn');
+        const completedContainer = document.getElementById('completedTaskList');
+        if (completed.length === 0) {
+            if (toggleBtn) toggleBtn.style.display = 'none';
+            if (completedContainer) completedContainer.style.display = 'none';
+        } else {
+            if (toggleBtn) toggleBtn.style.display = 'block';
+            if (completedContainer) completedContainer.style.display = showCompleted ? 'block' : 'none';
+        }
     } else {
         drawTasks(list, elementId, isAlarm, key);
     }
@@ -504,7 +542,14 @@ window.toggleTaskComplete = (id) => {
     localStorage.setItem('completedToday', Math.max(0, currentDone + completedDelta));
 
     localStorage.setItem('tasks', JSON.stringify(tasks));
-    renderAll(); // Esto refrescará la lista y el fuego
+    renderAll(); // Refrescar la vista principal y el fuego
+    
+    // Refrescar calendario dinámicamente si está abierto
+    const isCalendarView = document.getElementById('view-calendar').style.display === 'block';
+    if (isCalendarView) {
+        renderCalendar();
+        renderCalendarTasks(selectedCalendarDate);
+    }
 };
 function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     const container = document.getElementById(containerId);
@@ -519,8 +564,8 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
             icon = "🔔";
             text = "No hay recordatorios configurados";
         } else if (containerId === 'completedTaskList') {
-            icon = "✅";
-            text = "Aún no has completado tareas";
+            container.innerHTML = ''; // No dibujar caja vacía para evitar el espacio
+            return;
         } else if (containerId === 'taskList' && currentFilter !== 'all') {
             text = `Sin tareas en la categoría ${currentFilter}`;
         }
@@ -535,13 +580,16 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
     }
 
     // Si hay items, dibujamos normal (ahora el CSS los pondrá alineados)
-    container.innerHTML = list.map(item => `
-        <div class="reminder-card ${item.completed ? 'completed-task' : ''}" 
+    container.innerHTML = list.map(item => {
+        const isTaskOverdue = item.date && !item.completed && isOverdue(item.date);
+        const urgentClass = isTaskOverdue ? 'urgent' : '';
+        return `
+        <div class="reminder-card ${item.completed ? 'completed-task' : ''} ${urgentClass}" 
              data-id="${item.id}" data-key="${key}" 
              onclick="openTaskSheet(${item.id})">
             <div class="card-info">
                 <span class="category-emoji">${item.emoji || '📝'}</span>
-                <span class="task-text-content">${item.text}</span>
+                <span class="task-text-content">${item.text} ${isTaskOverdue ? '<span style="color:var(--error); font-size:11px; font-weight:bold; margin-left:6px;">(Vencida)</span>' : ''}</span>
             </div>
             <div class="actions">
                 <button onclick="event.stopPropagation(); toggleTaskComplete(${item.id})" class="btn-check">
@@ -549,7 +597,7 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
                 </button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
     
     attachLongPressEvents();
 }
@@ -561,7 +609,7 @@ window.deleteItem = (key, id) => {
 
     // 2. NUEVO: Cancelar la notificación nativa si estamos borrando un recordatorio
     if (key === 'reminders') {
-        const Notifications = getLocalNotifications();
+        
         if (Notifications) {
             // Le decimos a Android que olvide la notificación con este ID
             Notifications.cancel({ 
@@ -572,6 +620,13 @@ window.deleteItem = (key, id) => {
     }
 
     renderAll();
+    
+    // Refrescar calendario dinámicamente si está abierto al eliminar
+    const isCalendarView = document.getElementById('view-calendar').style.display === 'block';
+    if (isCalendarView && key === 'tasks') {
+        renderCalendar();
+        renderCalendarTasks(selectedCalendarDate);
+    }
 };
 
 window.completeTask = (id) => {
@@ -1046,11 +1101,6 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         
         // Solo mostrar el botón + de notas en la vista 'Notas'
         if (fabNote) fabNote.style.display = (targetView === 'view-notes') ? 'flex' : 'none';
-        const saveTaskBtn = document.getElementById('saveTaskBtn');
-if (saveTaskBtn) {
-    saveTaskBtn.addEventListener('click', saveTaskFromSheet);
-}
-
 
 
         // --- RECUPERAMOS EL BOTÓN FLOTANTE ---
@@ -1067,6 +1117,11 @@ if (saveTaskBtn) {
         }
     });
 });
+
+const saveTaskBtn = document.getElementById('saveTaskBtn');
+if (saveTaskBtn) {
+    saveTaskBtn.addEventListener('click', saveTaskFromSheet);
+}
 
     function renderStats() {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -1336,7 +1391,7 @@ function openTaskSheet(id = null) {
     const input = document.getElementById('sheetTaskInput');
     const label = document.getElementById('sheetCategoryLabel');
     const fabTask = document.getElementById('openTaskSheetBtn'); // El botón + verde
-
+    
     if (id) {
         // Modo edición
         const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -1351,39 +1406,55 @@ function openTaskSheet(id = null) {
         input.value = '';
         label.innerText = selectedEmoji || '📝';
     }
+    document.body.classList.add('stop-scrolling');
+    document.body.style.overflow = 'hidden';
+    input.focus();
 
-    sheet.classList.add('active');
+   
+    sheet.classList.add('active'); // Esto dispara la transición CSS
+   
+    
+    setTimeout(() => document.getElementById('sheetTaskInput').focus(), 300);
     
     // OCULTAR el botón + al abrir
     if (fabTask) fabTask.style.display = 'none';
 
-    setTimeout(() => input.focus(), 300);
+   
 }
 // Vincular el nuevo botón flotante de tareas
 document.getElementById('openTaskSheetBtn').addEventListener('click', () => openTaskSheet());
 
-// AUTO-GUARDADO AL CERRAR
-document.getElementById('closeSheetBtn').addEventListener('click', () => {
-    saveTaskFromSheet();
-});
 
 function saveTaskFromSheet() {
     const newText = document.getElementById('sheetTaskInput').value.trim();
     const fabTask = document.getElementById('openTaskSheetBtn'); // El botón + verde
+    const isCalendarView = document.getElementById('view-calendar').style.display === 'block';
     
     if (newText) {
         let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
         if (currentEditingTaskId) {
             tasks = tasks.map(t => t.id === currentEditingTaskId ? { ...t, text: newText } : t);
         } else {
-            tasks.push({ id: Date.now(), text: newText, emoji: selectedEmoji, completed: false });
             let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
             localStorage.setItem('totalCreatedToday', total + 1);
+
+            const taskDate = isCalendarView ? selectedCalendarDate : new Date().toLocaleDateString('es-ES');
+            
+            tasks.push({ 
+                id: Date.now(), 
+                text: newText, 
+                emoji: selectedEmoji, 
+                completed: false,
+                date: taskDate // Nueva propiedad de fecha
+            });
         }
         localStorage.setItem('tasks', JSON.stringify(tasks));
     }
     
     document.getElementById('taskBottomSheet').classList.remove('active');
+    document.body.classList.remove('stop-scrolling');
+    document.body.style.overflow = 'auto';
+    
     
     // MOSTRAR el botón + de nuevo al cerrar (si estamos en la vista de hoy)
     const currentView = document.querySelector('.nav-item.active').dataset.view;
@@ -1391,7 +1462,13 @@ function saveTaskFromSheet() {
         fabTask.style.display = 'flex';
     }
     
+    
     renderAll();
+    if (isCalendarView) {
+        renderCalendar(); // Actualiza los puntitos del calendario
+        renderCalendarTasks(selectedCalendarDate); // Actualiza la lista de tareas abajo
+    }
+   
 }
 
 // 3. Vincular los eventos de los botones (Pon esto donde tengas tus otros listeners)
@@ -1415,3 +1492,115 @@ window.addEventListener('resize', () => {
         bottomNav.style.opacity = '1';
     }
 });
+
+
+
+document.getElementById('taskSearchInput').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    
+    // Filtramos las tareas que coincidan con el texto
+    const filtered = allTasks.filter(t => t.text.toLowerCase().includes(term));
+    
+    // Dibujamos solo las filtradas
+    const pending = filtered.filter(t => !t.completed);
+    drawTasks(pending, 'taskList', false, 'tasks');
+});
+document.getElementById('addNewCategoryBtn').onclick = () => {
+    const name = prompt("Nombre de la categoría (ej: 📚 Estudios):");
+    if (name) {
+        const container = document.querySelector('.filter-container');
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip';
+        btn.dataset.filter = name;
+        btn.innerText = name;
+        
+        // Le damos funcionalidad al nuevo botón
+        btn.onclick = () => {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = name;
+            selectedEmoji = name;
+            renderAll();
+        };
+        
+        container.appendChild(btn);
+    }
+};
+let selectedCalendarDate = new Date().toLocaleDateString();
+let calendarDate = new Date(); // Esta es la variable que faltaba crear
+
+// --- C. LÓGICA DEL CALENDARIO ---
+document.getElementById('openCalendarBtn').onclick = () => {
+    document.getElementById('view-today').style.display = 'none';
+    document.getElementById('view-calendar').style.display = 'block';
+    renderCalendar();
+};
+
+document.getElementById('closeCalendarBtn').onclick = () => {
+    document.getElementById('view-calendar').style.display = 'none';
+    document.getElementById('view-today').style.display = 'block';
+};
+
+// Funciones para cambiar de mes
+document.getElementById('prevMonth').onclick = () => {
+    calendarDate.setMonth(calendarDate.getMonth() - 1);
+    renderCalendar();
+};
+
+document.getElementById('nextMonth').onclick = () => {
+    calendarDate.setMonth(calendarDate.getMonth() + 1);
+    renderCalendar();
+};
+
+function renderCalendar() {
+    const container = document.getElementById('calendar-container');
+    const monthYearText = document.getElementById('currentMonthYear');
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    container.innerHTML = '';
+
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    monthYearText.innerText = calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Espacios vacíos
+    for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
+        container.innerHTML += '<div></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = `${day}/${month + 1}/${year}`;
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        dayDiv.innerText = day;
+        
+        // 1. MARCADOR: Si este día tiene tareas, añadimos el puntito visual
+        const hasTasks = tasks.some(t => t.date === dateKey);
+        if (hasTasks) dayDiv.classList.add('has-tasks');
+
+        // 2. SELECCIÓN: Resaltar el día que estamos viendo
+        if (dateKey === selectedCalendarDate) dayDiv.classList.add('active');
+
+        dayDiv.onclick = () => {
+            selectedCalendarDate = dateKey; // Actualizamos la fecha seleccionada
+            renderCalendar(); // Refresca los estilos (clase active)
+            renderCalendarTasks(dateKey); // Carga las tareas de ese día
+        };
+        container.appendChild(dayDiv);
+    }
+}
+
+// Función para dibujar las tareas de un día específico en el calendario
+function renderCalendarTasks(date) {
+    const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const tasksForDay = allTasks.filter(t => t.date === date);
+    
+    // Usamos tu función drawTasks ya existente para mantener el diseño
+    drawTasks(tasksForDay, 'calendarTaskList', false, 'tasks');
+    
+    // Actualizamos el subtítulo
+    document.getElementById('selectedDateTitle').innerText = `Tareas para el ${date}`;
+}

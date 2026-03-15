@@ -36,6 +36,8 @@
 
 
 
+
+
 /* =========================================
    MODO OSCURO (Estilo Notion Dark)
    ========================================= */
@@ -77,32 +79,61 @@ body.dark-mode input {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
 }
+/* --- CONFIGURACIÓN DE PANTALLA FIJA --- */
+
+
+
+/* --- BLOQUEO INTELIGENTE (Solo cuando hay paneles abiertos) --- */
+html {
+    background-color: var(--bg-app);
+    height: 100%;
+}
 
 body {
-    margin: 0;
-    /* Usamos Inter como principal y fuentes del sistema como respaldo */
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+   
+   
+    
+   margin: 0;
+    font-family: 'Inter', sans-serif;
     background-color: var(--bg-app);
     color: var(--text-main);
     
-    /* TRUCOS DE DISEÑO PRO: */
-    line-height: 1.6;          /* Más espacio entre líneas = más descanso visual */
-    letter-spacing: -0.01em;   /* Un pelín más juntas las letras para estilo moderno */
-    -webkit-font-smoothing: antialiased; /* Suaviza las letras en móviles */
+    /* CAMBIO CLAVE: Asegura que el cuerpo siempre mida toda la pantalla */
+    min-height: 100vh; 
+    display: flex;
+    flex-direction: column;
+    
     padding-bottom: 90px;
+    -webkit-font-smoothing: antialiased;
 }
 .container {
-    width: 95%;
+     width: 95%;
     max-width: 500px;
     margin: 0 auto;
     padding: 20px 10px;
+    
+    /* CAMBIO CLAVE: El contenedor también debe intentar llenar el espacio */
+    flex-grow: 1; 
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch; /* Suavizado para móviles */
 }
+.stop-scrolling {
+    height: 100%;
+    overflow: hidden !important;
+    position: fixed; /* Esto garantiza que el fondo no se mueva nada */
+    width: 100%;
+}
+
+
 
 /* =========================================
    3. SISTEMA DE VISTAS (Navegación)
    ========================================= */
 .view {
-    display: none; /* Se activan con JS */
+    display: none; 
+    flex: 1; 
+    flex-direction: column;
     animation: fadeIn 0.4s ease-out forwards;
 }
 
@@ -121,9 +152,20 @@ h1, h2 {
     
     /* --- NUEVOS CAMBIOS MINIMALISTAS --- */
     text-align: center;      /* Centra los títulos perfectamente */
-    margin-top: 60px;        /* Crea un margen amplio en la parte superior */
-    margin-bottom: 60px;     /* Crea un margen amplio en la parte inferior */
+    margin-top: 30px;        /* Crea un margen amplio en la parte superior */
+    margin-bottom: 30px;     /* Crea un margen amplio en la parte inferior */
 }
+
+/* Eliminar el exceso de espacio en blanco debajo del subtítulo desplegable */
+#toggleCompletedBtn {
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+ 
+
+
+
 
 /* Para que las tareas se vean más finas */
 .task-text {
@@ -259,12 +301,17 @@ button:active { transform: scale(0.96); }
    6. TARJETAS Y LISTAS
    ========================================= */
 .reminder-card {
-    padding: 8px 12px; /* Reducimos el padding vertical de 15px a 8px */
-    margin-bottom: 6px; /* Espacio entre tarjetas más pequeño */
+    background: var(--bg-app);
+    padding: 8px 12px; /* Mucho más fino */
+    margin-bottom: 6px; /* Espacio mínimo entre tareas */
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
     display: flex;
-    align-items: center; 
+    align-items: center;
     gap: 10px;
-    min-height: auto; /* Quitamos alturas mínimas forzadas */
+    min-height: auto;
+    user-select: none;
+    transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 @keyframes slideIn {
@@ -816,13 +863,16 @@ body.dark-mode .note-card {
 
 /* PANEL INFERIOR (Bottom Sheet) */
 .bottom-sheet {
-    position: fixed;
+  position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.4);
     z-index: 5000;
-    display: none;
+     display: flex !important; 
+    visibility: hidden;
+    opacity: 0;
     align-items: flex-end;
-    transition: background 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0.3s;
+    
 }
 
 .sheet-content {
@@ -831,8 +881,8 @@ body.dark-mode .note-card {
     padding: 20px;
     border-radius: 20px 20px 0 0;
     transform: translateY(100%);
-    transition: transform 0.3s ease-out;
-    height: auto;
+    
+   height: 60vh;
     max-height: 85vh; /* Puede crecer hasta casi pantalla completa */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s ease;
 }
@@ -844,12 +894,20 @@ body.dark-mode .note-card {
     transform: none;
 }
 
-.bottom-sheet.active { display: flex; }
+
+
+.bottom-sheet.active { 
+    display: flex;
+visibility: visible;
+    opacity: 1; 
+}
+    
 .bottom-sheet.active .sheet-content { transform: translateY(0); }
 
 .sheet-handle {
     width: 40px; height: 4px; background: #ddd;
     border-radius: 2px; margin: 0 auto 15px;
+    touch-action: none;
 }
 
 #sheetTaskInput {
@@ -877,16 +935,15 @@ body.dark-mode .note-card {
 .btn-save-task:active {
     transform: scale(0.9);
 }
-
 .empty-state {
     text-align: center;
-    padding: 30px 10px;
+    padding: 15px 10px; /* Reducido a la mitad */
     opacity: 0.5;
-    font-size: 14px;
+    font-size: 13px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
 }
 
 .empty-state span {
@@ -957,3 +1014,59 @@ body.dark-mode .note-card {
 
 .menu-divider { border: 0; border-top: 1px solid var(--border-soft); margin: 10px 0; }
 .side-menu-footer { padding: 20px; font-size: 12px; opacity: 0.5; text-align: center; }
+
+
+
+.task-tools-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 5px 0;
+}
+
+.task-tools-nav button {
+    background: var(--bg-alt);
+    color: var(--text-main);
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border-soft);
+}
+
+.search-box {
+    position: relative;
+    flex-grow: 1;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 6px 30px 6px 10px;
+    font-size: 13px;
+}
+
+.search-box span {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+.calendar-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; padding: 0 10px;
+}
+.calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 8px; background: var(--bg-alt);
+    padding: 15px; border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+.calendar-day {
+    aspect-ratio: 1; display: flex; align-items: center;
+    justify-content: center; font-size: 14px;
+    border-radius: 8px; cursor: pointer; transition: 0.2s;
+}
+.calendar-day:active { background: var(--pastel-blue); }
+.calendar-day.active { background: var(--accent); color: white; font-weight: bold; }
+.calendar-day.has-tasks { border-bottom: 3px solid var(--success); }

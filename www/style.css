@@ -2,7 +2,7 @@
    1. VARIABLES NOTION PASTEL (Personalizadas)
    ========================================= */
 :root {
-    --bg-app: #FFFFFF;
+    --bg-app: #f4f8f7;
     --bg-alt: #FBFBFA; /* Gris sutil de Notion */
     --text-main: #37352F;
     --text-sub: #787774;
@@ -20,22 +20,20 @@
     --success: #52BD94; /* Verde Notion */
     --error: #EB5757;
     --radius: 12px;
+
+
+    
+    /* Fondo de las cards: Blanco puro para que "salten" a la vista */
+    --bg-card: #ffffff; 
+    
+    /* Bordes y sombras suaves */
+    --border-soft: #e2e8f0;
+    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.04);
+    
+    /* Texto principal para fondo claro */
+    --text-main: #1e293b;
+    --text-muted: #64748b;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* =========================================
@@ -135,6 +133,7 @@ body {
     flex: 1; 
     flex-direction: column;
     animation: fadeIn 0.4s ease-out forwards;
+    
 }
 
 /* La primera vista visible por defecto */
@@ -218,7 +217,7 @@ h1, h2 {
     font-size: 12px;
     color: var(--text-sub);
     margin-top: -10px;
-    margin-bottom: 20px;
+    margin-bottom: -10px;
     font-weight: 500;
 }
 
@@ -312,6 +311,7 @@ button:active { transform: scale(0.96); }
     min-height: auto;
     user-select: none;
     transition: transform 0.2s ease, background-color 0.2s ease;
+    box-shadow: var(--shadow-light);
 }
 
 @keyframes slideIn {
@@ -337,7 +337,7 @@ button:active { transform: scale(0.96); }
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding: 5px 0 15px 0;
+    padding: 5px 0 5px 0;
     scrollbar-width: none;
 }
 
@@ -358,6 +358,80 @@ button:active { transform: scale(0.96); }
     border-color: #BDE0EB;
     font-weight: 600;
 }
+
+.google-search-container {
+    position: relative; /* Clave: el contenedor es el eje de coordenadas */
+    width: 100%;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+}
+
+.google-search-icon {
+    position: absolute;
+    left: 16px; /* Espacio desde el borde izquierdo */
+    width: 20px;
+    height: 20px;
+    fill: #5f6368; /* El color gris característico de los iconos de Google */
+    pointer-events: none; /* El clic pasa a través del icono hacia el input */
+}
+
+
+
+#noteSearchInput {
+    width: 100%;
+    /* 48px de padding a la izquierda deja espacio perfecto para la lupa de 20px */
+    padding: 12px 16px 12px 48px !important; 
+    font-size: 16px;
+    border: 1px solid #dfe1e5;
+    border-radius: 24px; /* Forma de píldora total estilo Google */
+    background-color: #fff;
+    outline: none;
+    transition: box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--bg-alt); /* Tu color gris suave */
+    border-radius: 25px;
+    padding: 2px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 40px; /* Ancho inicial (solo el botón) */
+    overflow: hidden;
+    border: 1px solid transparent;
+}
+
+/* Cuando está abierto, se expande hacia la izquierda del botón */
+.search-wrapper.expanded {
+    width: 200px; /* Ajusta según cuánto quieras que crezca */
+    border-color: var(--border-soft);
+    padding: 2px 10px;
+}
+
+.search-field {
+    width: 0;
+    opacity: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    padding: 0;
+}
+
+/* El input se muestra cuando el contenedor tiene la clase 'expanded' */
+.search-wrapper.expanded .search-field {
+    width: 100%;
+    opacity: 1;
+    padding: 5px;
+}
+
+
+
+/* Efecto de sombra suave al hacer clic, como en el buscador de Google */
+
 
 /* =========================================
    7. MENÚ INFERIOR (Bottom Nav)
@@ -656,7 +730,7 @@ button:active { transform: scale(0.96); }
 
 /* Restauramos la tarjeta simple */
 .reminder-card {
-    background: var(--bg-app);
+    background: var( --bg-card);
     padding: 16px;
     border-radius: 12px;
     border: 1px solid var(--border-soft);
@@ -788,14 +862,14 @@ body.dark-mode .note-card {
 .fab-btn {
     position: fixed; /* Se pega a la ventana del celular */
     bottom: 100px;   /* Distancia desde el fondo */
-    left: 80%;
+    left: 84%;
     transform: translateX(-50%); /* Centrado horizontal perfecto */
     
     width: 60px;
     height: 60px;
     border-radius: 50%;
     background-color: var(--pastel-yellow);
-    color: #856404;
+    color: #d6a511;
     font-size: 32px;
     
     display: none; /* Empezamos ocultos, el JS lo activará */
@@ -803,7 +877,7 @@ body.dark-mode .note-card {
     justify-content: center;
     
     z-index: 9999; /* Por encima de absolutamente todo */
-    border: 2px solid #F3E5BC;
+    border: 1px solid #d6a511;
     
     cursor: pointer;
 }
@@ -815,13 +889,21 @@ body.dark-mode .note-card {
     font-size: 15px;
 }
 
+/* Barra de Categorías e Input */
+.notes-nav-container { margin-bottom: 20px; }
+.notes-category-bar {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding: 10px 0; scrollbar-width: none;
+}
+
 /* Contenedor del Editor */
 .editor-container {
-    background: var(--bg-alt);
-    border-radius: 16px;
-    padding: 20px;
-    min-height: 60vh;
+    flex: 1; /* Esto obliga al contenedor a estirarse y llenar la pantalla */
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
 }
+
 
 /* Ajuste de las tarjetas de nota en la lista para que sean clickeables */
 .note-card {
@@ -837,6 +919,26 @@ body.dark-mode .note-card {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* Suavizado para iOS/Safari */
 }
+
+/* En tu style.css */
+.hidden {
+    display: none !important;
+}
+
+#noteInput {
+    flex: 1; /* El área de texto ocupa todo el espacio restante */
+    width: 100%; border: none; background: transparent;
+    font-size: 16px; resize: none; outline: none;
+    color: var(--text-main);
+}
+
+
+.note-cat-chip {
+    background: var(--bg-alt); border: 1px solid var(--border-soft);
+    padding: 8px 16px; border-radius: 20px; font-size: 13px;
+    white-space: nowrap; transition: 0.3s; color: var(--text-sub);
+}
+.note-cat-chip.active { background: var(--pastel-yellow); color: #856404; font-weight: bold; }
 
 /* Subtítulos de sección */
 .section-subtitle {
@@ -866,7 +968,7 @@ body.dark-mode .note-card {
   position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.4);
-    z-index: 5000;
+    z-index: 10005;
      display: flex !important; 
     visibility: hidden;
     opacity: 0;
@@ -892,6 +994,10 @@ body.dark-mode .note-card {
 #openTaskSheetBtn {
     left:80%; /* Anulamos el centrado anterior si prefieres que esté a la derecha */
     transform: none;
+    background: #54A3D6;
+    border: 1px solid #54A3D6;
+    color: #f7f2f2;
+    box-shadow: 0 2px 8px rgb(61, 60, 60);
 }
 
 
@@ -1070,3 +1176,209 @@ visibility: visible;
 .calendar-day:active { background: var(--pastel-blue); }
 .calendar-day.active { background: var(--accent); color: white; font-weight: bold; }
 .calendar-day.has-tasks { border-bottom: 3px solid var(--success); }
+.samsung-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 20px 15px 10px 15px; /* Ajustamos padding lateral */
+    box-sizing: border-box; /* */
+}
+
+.header-actions {
+    display: flex;
+    gap: 2px; /* Espacio mínimo entre iconos */
+    align-items: center;
+}
+
+.main-title {
+    font-size: 32px; /* Título grande y limpio */
+    font-weight: 500;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+
+
+.action-btn svg {
+    width: 20px;  /* Bajamos de 24px a 20px para que se vea más minimalista */
+    height: 20px;
+    fill: none;
+    stroke: var(--text-main);
+    stroke-width: 1.5; /* Línea fina como en tu imagen */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.action-btn:active {
+    opacity: 0.5;
+}
+/* Limpiamos los botones del encabezado para que no estiren el icono */
+.action-btn {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important; /* Eliminamos el padding de 12px 20px */
+    width: 40px;  /* Área de toque cómoda para el dedo */
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+
+/* Forzamos el tamaño del SVG independientemente del dispositivo */
+.action-btn svg {
+    width: 20px !important;  /* Tamaño exacto en píxeles */
+    height: 20px !important;
+    min-width: 20px;
+    min-height: 20px;
+    stroke-width: 1.2; /* Línea más fina para que no se vea tosco en móvil */
+}
+
+/* Efecto al tocar */
+.action-btn:active svg {
+    opacity: 0.4;
+    transform: scale(0.9);
+}
+/* Iconos del Menú Inferior */
+.nav-icon {
+    width: 22px; /* Un poco más grande que el de arriba para que sea fácil de tocar */
+    height: 22px;
+    fill: none;
+    stroke: currentColor; /* Hereda el color del texto del botón */
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-bottom: 2px; /* Ajustamos el espacio con el texto */
+}
+.nav-icon.icon-filled {
+    /* Esto quita el negro por defecto y permite que el CSS mande */
+    fill: currentColor !important; 
+    stroke: none;
+    width: 22px;
+    height: 22px;
+}
+
+/* Color cuando NO está seleccionado (gris sub de Notion) */
+.nav-item {
+    color: var(--text-sub); /* */
+}
+
+/* Color cuando SÍ está seleccionado (azul Notion) */
+.nav-item.active {
+    color: var(--accent); /* */
+}
+
+/* Efecto cuando el botón está activo */
+.nav-item.active .nav-icon {
+    stroke: var(--accent); /* Cambia al azul de Notion/Samsung */
+    stroke-width: 2.0;      /* Un poco más grueso para resaltar el estado activo */
+}
+
+.nav-item:active .nav-icon {
+    transform: scale(0.9);
+}
+.action-btn, .nav-item {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+#view-notes-editor,#view-calendar{
+    position: fixed; /* Se queda quieto respecto a la pantalla */
+    top: 0;
+    left: 0;
+    width: 100vw;     /* Ocupa el 100% del ancho */
+    height: 100vh;    /* Ocupa el 100% del alto */
+    background-color: var(--bg-app); /* Fondo sólido para tapar lo de atrás */
+    z-index: 9999;    /* El número más alto para que esté sobre el menú y el nav */
+    padding: 20px;
+    box-sizing: border-box;
+    display: none;    /* Oculto por defecto */
+    flex-direction: column;
+    overflow-y: auto; /* Por si la nota es muy larga */
+}
+
+/* Cuando el editor esté activo, lo mostramos con flex */
+#view-notes-editor.active ,#view-calendar.active {
+    display: flex !important;
+}
+.reminder-item {
+    background: var(--bg-alt);
+    padding: 15px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-soft);
+}
+
+.reminder-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reminder-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+
+/* El marcador de hora */
+.time-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4A90E2; /* Un azul vibrante */
+    background: rgba(74, 144, 226, 0.1); /* Fondo translúcido */
+    padding: 2px 8px;
+    border-radius: 20px;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.time-tag::before {
+    content: '🕒';
+    font-size: 10px;
+}
+.created-at-badge {
+    font-size: 10px;
+    color: #2ecc71; /* Un verde bonito */
+    background: rgba(46, 204, 113, 0.1); /* Fondo muy sutil */
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 5px;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.created-at-badge::before {
+    content: '✍️'; /* Emoji de "escrito" */
+    margin-right: 4px;
+    font-size: 8px;
+}
+.task-data-wrapper {
+    display: flex;
+    flex-direction: column; /* Texto arriba, horas abajo */
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.time-badges-container {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap; /* Por si el espacio es poco en el móvil */
+}
+

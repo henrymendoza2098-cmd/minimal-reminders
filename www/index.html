@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Solo Recordar 📝</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -16,6 +17,7 @@
     <div class="side-menu-content">
         <div class="side-menu-header">
             <h3>Solo Recordar 📝</h3>
+            
             <button id="closeMenuBtn" class="btn-text">✕</button>
         </div>
         
@@ -50,25 +52,44 @@
         <section id="view-today" class="view">
             <h1>Hoy </h1>
             
-            <div class="streak-container" id="streakContainer">
-                <img src="fuego_naranja.gif" id="streakIcon" alt="Fuego" class="pixel-fire">
-                <span id="streakCount"> 0 tareas</span>
-            </div>
+            
 
             <div class="progress-container">
                 <div id="progressBar" class="progress-bar"></div>
             </div>
             <span id="progressText">0% completado</span>
 
+             <div class="samsung-header">
+    <h1 class="main-title"></h1>
+    <div class="header-actions">
+        <button id="addNewCategoryBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <i class="fi fi-sr-home"></i>
+        
+     <div class="search-wrapper" id="taskSearchWrapper">
+    <input type="text" id="taskSearchInput" placeholder="Buscar..." class="search-field">
+    
+    <button id="taskSearchInputt" class="action-btn">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+</div>
 
-        <div class="task-tools-nav">
-    <button id="openCalendarBtn">📅 Calen.</button>
-    <button id="addNewCategoryBtn">➕ Cat.</button>
-    <div class="search-box">
-        <input type="text" id="taskSearchInput" placeholder="Buscar...">
-        <span class="search-icon">🔍</span>
+        <button id="openCalendarBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </button>
+
+        <button id="menuBtnHeader" class="action-btn">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
     </div>
 </div>
+
+   
+</div>
+
+
+
 
    <div class="filter-container" style="margin-bottom: 15px;">
     <button class="filter-chip active" data-filter="all">🏠 Todas</button>
@@ -124,6 +145,26 @@
 
       <section id="view-notes" class="view" style="display:none;">
     <h1>Notas</h1>
+    <div class="notes-nav-container">
+        
+
+        <div class="google-search-container">
+    <svg class="google-search-icon" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    </svg>
+    
+    <input type="text" id="noteSearchInput" placeholder="Buscar en mis notas..." oninput="handleNoteSearch()">
+</div>
+        
+    <div class="notes-category-bar">
+        <button class="note-cat-chip active" onclick="filterNotes('all')">Todas</button>
+        <button class="note-cat-chip" onclick="filterNotes('Trabajo')">💼 Trabajo</button>
+        <button class="note-cat-chip" onclick="filterNotes('Estudio')">📚 Estudio</button>
+        <button class="note-cat-chip" onclick="filterNotes('Personal')">🏠 Personal</button>
+    </div>
+    
+    
+</div>
     
     <div id="notesList" class="list-container">
         </div>
@@ -132,16 +173,26 @@
 </section>
 
 <section id="view-notes-editor" class="view" style="display:none; padding: 20px;">
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <button id="cancelNoteBtn" class="btn-text" style="font-size: 18px;">← Volver</button>
         <button id="addNoteBtn" style="background-color: var(--pastel-yellow); color: #856404; padding: 8px 20px; border-radius: 20px; font-weight: bold;">Guardar</button>
     </div>
-    
+     <div class="editor-header" style="justify-content: space-between; padding: 10px;">
+    <select id="noteCategorySelect" style="background: var(--bg-alt); border: none; border-radius: 8px; font-size: 12px; padding: 5px;">
+        <option value="General">📁 General</option>
+        <option value="Trabajo">💼 Trabajo</option>
+        <option value="Estudio">📚 Estudio</option>
+        <option value="Personal">🏠 Personal</option>
+    </select>
+    <button id="addPhotoBtn" class="btn-text" style="font-size: 18px;">📷</button>
+</div>
     <input type="text" id="noteTitleInput" placeholder="Título" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 24px; font-weight: 800; outline: none; margin-bottom: 15px; color: var(--text-main);">
 
     <div class="editor-container" style="background: transparent; padding: 0;">
-        <textarea id="noteInput" placeholder="Empieza a escribir tu nota..." rows="15" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 16px; resize: none; outline: none; line-height: 1.6; color: var(--text-main);"></textarea>
+        <textarea id="noteInput" placeholder="Empieza a escribir tu nota..." rows="18" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 16px; resize: none; outline: none; line-height: 1.6; color: var(--text-main);"></textarea>
     </div>
+    <div id="notePhotosPreview" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px;"></div>
 </section>
 
         <section id="view-reminders" class="view" style="display:none;">
@@ -157,10 +208,11 @@
             </div>
 
             <div class="presets">
-                <button type="button" class="preset-btn" data-min="15">+15 min</button>
+                <button type="button" class="preset-btn" data-min="01">+01 min</button>
+                <button type="button" class="preset-btn" data-min="05">+05 min</button>
                 <button type="button" class="preset-btn" data-min="60">+1 hora</button>
                 <button type="button" class="preset-btn" data-min="1440">Mañana</button>
-            </div>
+            </div> 
 
             <section class="panel">
                 <h3>🔔 Próximas Alarmas</h3>
@@ -170,6 +222,10 @@
 
       <section id="view-profile" class="view" style="display:none;">
         <h2> 👤 Mi Perfil </h2>
+        <div class="streak-container" id="streakContainer">
+                <img src="fuego_naranja.gif" id="streakIcon" alt="Fuego" class="pixel-fire">
+                <span id="streakCount"> 0 tareas</span>
+            </div>
     <h2>Tu Rendimiento </h2>
     <div id="permission-status-card" class="status-card" style="margin-bottom: 20px;">
     <div class="status-header">
@@ -208,24 +264,34 @@
     
 
     <nav class="bottom-nav">
-        <button class="nav-item active" data-view="view-today">
-            <span>🏠</span>
-            Hoy
-        </button>
-        
-        <button class="nav-item" data-view="view-reminders">
-            <span>⏰</span>
-            Alarmas
-        </button>
-        <button class="nav-item" data-view="view-notes">
-        <span>🗒️</span>Notas
+    <button class="nav-item active" data-view="view-today">
+      <svg viewBox="0 0 512 512" class="nav-icon icon-filled">
+        <path d="M261.56 32.47c-15.07 0-28.51 7.34-36.03 18.57L23.55 315.44c-4.53 6.75-7.11 14.71-7.11 23.23 0 22.31 18.23 40.54 40.54 40.54h11.23v100.32c0 22.31 18.23 40.54 40.54 40.54h294.5c22.31 0 40.54-18.23 40.54-40.54V379.21h11.23c22.31 0 40.54-18.23 40.54-40.54 0-8.52-2.58-16.48-7.11-23.23L297.59 51.04c-7.52-11.23-20.96-18.57-36.03-18.57zm0 248.83c-44.24 0-80.11 35.87-80.11 80.11v150.62h160.22V361.41c0-44.24-35.87-80.11-80.11-80.11z"/>
+    </svg>
+    <span>Hoy</span>
     </button>
-        
-        <button class="nav-item" data-view="view-profile">
-            <span>📊</span>
-            Perfil
-        </button>
-    </nav>
+
+    <button class="nav-item" data-view="view-reminders">
+        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
+        <path d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Zm3.303,13.712-4.015-2.41a1.006,1.006,0,0,1-.488-.8V7.5a1,1,0,0,1,2,0v4.542l3.6,2.158a1,1,0,1,1-1.094,1.67Z"/>
+    </svg>
+    <span>Alarmas</span>
+    </button>
+
+    <button class="nav-item" data-view="view-notes">
+        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
+        <path d="M19,2H8A3,3,0,0,0,5,5V19a3,3,0,0,0,3,3H19a1,1,0,0,0,1-1V3A1,1,0,0,0,19,2ZM12,15H8a1,1,0,0,1,0-2h4a1,1,0,0,1,0,2Zm4-4H8a1,1,0,0,1,0-2h8a1,1,0,0,1,0,2Z"/>
+    </svg>
+    <span>Notas</span>
+    </button>
+
+    <button class="nav-item" data-view="view-profile">
+        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
+        <path d="M12,12A5,5,0,1,0,7,7,5.006,5.006,0,0,0,12,12Zm5,2H7a5.006,5.006,0,0,0-5,5v2a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V19A5.006,5.006,0,0,0,17,14Z"/>
+    </svg>
+    <span>Perfil</span>
+    </button>
+</nav>
 
     <div id="customModal" class="modal-overlay">
         <div class="modal-content">
@@ -245,7 +311,7 @@
         <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px;">Cancelar</button>
     </div>
 </div>
-<button id="openTaskSheetBtn" class="fab-btn" style="display:flex; background-color: var(--pastel-green); color: #6d6464;">+</button>
+<button id="openTaskSheetBtn" class="fab-btn" style="display:flex;  ">+</button>
  <button id="openNoteEditorBtn" class="fab-btn" style="display:none;">+</button>
  <div id="taskBottomSheet" class="bottom-sheet">
     <div class="sheet-content">

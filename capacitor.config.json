@@ -1,5 +1,12 @@
 {
-  "appId": "com.henry.solorecordar",
+  "appId": "io.ionic.starter",
   "appName": "Solo Recordar",
-  "webDir": "www"
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "Keyboard": {
+      "resize": "body",
+      "style": "light"
+    }
+  }
 }

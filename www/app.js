@@ -1,4 +1,5 @@
 // 1. VARIABLES GLOBALES Y ESTADO
+
 let editId = null; 
 let selectedEmoji = "📝"; 
 const taskInput = document.getElementById('taskInput');
@@ -6,21 +7,26 @@ const addBtn = document.getElementById('addBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 // Variable global para el filtro actual
 let currentFilter = 'all';
-
 const noteInput = document.getElementById('noteInput');
 const addNoteBtn = document.getElementById('addNoteBtn');
-
+let currentNotePhotos = []; // Array temporal para la nota actual
 // Variable global para saber si estamos editando una nota existente
 let currentEditingNoteId = null;
 let selectedTaskData = null; // Guardará la info de la tarea presionada
-
-
+let currentNoteFilter = 'all';
+let noteImages = []; // Array temporal para fotos de la nota actual
 // Botones de navegación de notas
 const openNoteEditorBtn = document.getElementById('openNoteEditorBtn');
 const cancelNoteBtn = document.getElementById('cancelNoteBtn');
 const getTodayStr = () => new Date().toLocaleDateString('es-ES');
-
+let showCompleted = false;
+let currentEditingTaskId = null;
+let currentEditingTaskKey = 'tasks'; // Nueva variable para saber qué lista editamos
 // Función que verifica si una fecha es anterior a hoy
+const wrapper = document.getElementById('taskSearchWrapper');
+const btnJava = document.getElementById('taskSearchInputt');
+const inputField = document.getElementById('taskSearchInput');
+
 function isOverdue(dateStr) {
     if (!dateStr) return false;
     const parts = dateStr.split('/');
@@ -31,9 +37,8 @@ function isOverdue(dateStr) {
     return taskDate < today;
 }
 
-let showCompleted = false;
-let currentEditingTaskId = null;
-let currentEditingTaskKey = 'tasks'; // Nueva variable para saber qué lista editamos
+
+
 
 const getLocalNotifications = () => {
     return (typeof Capacitor !== 'undefined' && Capacitor.Plugins.LocalNotifications) 
@@ -42,46 +47,154 @@ const getLocalNotifications = () => {
 };
 const Notifications = getLocalNotifications();
 
+async function syncNotificationsWithStorage() {
+    if (!Notifications) return;
 
+    try {
+        // 1. Obtenemos las notificaciones que Android tiene programadas
+        const pendingReqs = await Notifications.getPending();
+        const pendingList = pendingReqs.notifications;
+
+        // 2. Obtenemos nuestros recordatorios actuales
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+        const reminderIds = reminders.map(r => parseInt(r.id));
+
+        // 3. Comparamos: Si la alarma de Android no está en nuestra lista, se cancela
+        pendingList.forEach(notif => {
+            if (!reminderIds.includes(notif.id)) {
+                Notifications.cancel({ notifications: [{ id: notif.id }] });
+                console.log(`Sincronización: Alarma fantasma ${notif.id} eliminada.`);
+            }
+        });
+    } catch (error) {
+        console.error("Error en la sincronización de notificaciones:", error);
+    }
+}
 // 1. Registrar los tipos de acciones
-
-
-
 document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
     showCompleted = !showCompleted;
     const container = document.getElementById('completedTaskList');
     container.style.display = showCompleted ? 'block' : 'none';
 });
-
 // Abrir editor para nota nueva
 openNoteEditorBtn.addEventListener('click', () => {
-    currentEditingNoteId = null; // Reset para nota nueva
+    currentEditingNoteId = null;
+    currentNotePhotos = []; // Vaciamos las fotos
+    document.getElementById('noteTitleInput').value = '';
     document.getElementById('noteInput').value = '';
+
+    if (document.getElementById('notePhotosPreview')) {
+        document.getElementById('notePhotosPreview').innerHTML = '';
+    }
     switchNoteView('view-notes-editor');
 });
 
+
+
+
+
+if (typeof Capacitor !== 'undefined') {
+    const { App } = Capacitor.Plugins;
+
+    if (App) {
+        App.addListener('backButton', () => {
+            const editor = document.getElementById('view-notes-editor');
+            const sideMenu = document.getElementById('sideMenuOverlay');
+
+            if (editor && editor.classList.contains('active')) {
+                switchNoteView('view-notes'); // Regresa a la lista si el editor está abierto
+            } else if (sideMenu && sideMenu.classList.contains('active')) {
+                toggleSideMenu(); // Cierra el menú si está abierto
+            } else {
+                App.exitApp(); // Si está en el inicio, sale de la app
+            }
+        });
+    }
+}
+
 // Cancelar y volver a la lista
 cancelNoteBtn.addEventListener('click', () => {
+    
     switchNoteView('view-notes');
 });
+
+
+
+
+
+
+
+
+
+// --- FUNCIÓN PARA ADJUNTAR FOTO ---
+document.getElementById('addPhotoBtn').onclick = async () => {
+    if (typeof Capacitor === 'undefined') return alert("Cámara solo disponible en el celular.");
+
+    try {
+        const image = await Capacitor.Plugins.Camera.getPhoto({
+            quality: 50, // Calidad media para no llenar el almacenamiento
+            resultType: 'base64',
+            source: 'PROMPT' // Permite elegir entre Cámara o Galería
+        });
+
+        const base64Image = `data:image/jpeg;base64,${image.base64String}`;
+        currentNotePhotos.push(base64Image);
+        renderEditorPhotos();
+    } catch (error) {
+        console.log("Cámara cancelada o error:", error);
+    }
+};
+
+function renderEditorPhotos() {
+    const preview = document.getElementById('notePhotosPreview');
+    preview.innerHTML = currentNotePhotos.map((src, index) => `
+        <div style="position: relative;">
+            <img src="${src}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+            <button onclick="removePhoto(${index})" style="position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; border: none; width: 20px; height: 20px; font-size: 12px;">×</button>
+        </div>
+    `).join('');
+}
+
+window.removePhoto = (index) => {
+    currentNotePhotos.splice(index, 1);
+    renderEditorPhotos();
+};
 
 // Función auxiliar para cambiar sub-vistas de notas
 document.getElementById('addNoteBtn').addEventListener('click', () => {
     const title = document.getElementById('noteTitleInput').value.trim();
     const content = document.getElementById('noteInput').value.trim();
+    const category = document.getElementById('noteCategorySelect')?.value || 'General';
     
-    if (!title && !content) return; // No guardar notas vacías
+    if (!title && !content) return;
 
     let notes = JSON.parse(localStorage.getItem('notes') || '[]');
     
     if (currentEditingNoteId) {
-        notes = notes.map(n => n.id === currentEditingNoteId ? { ...n, title, content } : n);
+        // Editando nota existente: conservamos y actualizamos imágenes
+        notes = notes.map(n => n.id === currentEditingNoteId ? 
+            { ...n, title, content, category, images: currentNotePhotos } : n);
     } else {
-        notes.push({ id: Date.now(), title, content });
+        // Creando nota nueva
+        notes.push({ 
+            id: Date.now(), 
+            title: title || 'Sin título', 
+            content, 
+            category,
+            images: currentNotePhotos // Guardamos el array de fotos actual
+        });
     }
     
     localStorage.setItem('notes', JSON.stringify(notes));
+    
+    // IMPORTANTE: Limpiar el array de fotos después de guardar
+    currentNotePhotos = [];
+    if (document.getElementById('notePhotosPreview')) {
+        document.getElementById('notePhotosPreview').innerHTML = '';
+    }
+    
     switchNoteView('view-notes'); 
+    renderNotes(); // Refrescar la lista principal
 });
 
 // Función para cambiar de vista
@@ -106,7 +219,16 @@ window.openEditNote = (id) => {
         currentEditingNoteId = id;
         document.getElementById('noteTitleInput').value = note.title || '';
         document.getElementById('noteInput').value = note.content || '';
+        
+        // --- NUEVA LÓGICA PARA IMÁGENES ---
+        // 1. Cargamos las imágenes de la nota en la variable global
+        currentNotePhotos = note.images || []; 
+        
+        // 2. Las dibujamos en el panel de vista previa del editor
+        renderEditorPhotos(); 
+        
         switchNoteView('view-notes-editor');
+        
     }
 };
 
@@ -176,13 +298,6 @@ if (cancelBtn) {
 }
 
 
-
-
-
-
-
-
-
     // 2. INICIO, SERVICE WORKER Y TEMA OSCURO
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(() => {
@@ -195,7 +310,6 @@ if ('serviceWorker' in navigator) {
         }
     });
 }
-
 
 
 addBtn.addEventListener('click', async () => {
@@ -271,10 +385,12 @@ async function registerNotificationActions() {
 // LLAMADA IMPORTANTE: Ejecútala al cargar la app
 document.addEventListener('DOMContentLoaded', () => {
     registerNotificationActions(); // Sin esto, los botones no salen
+    syncNotificationsWithStorage();
     renderAll();
 });
 requestPermissions();
 
+// Función para inicializar los eventos del teclado
 
 
 
@@ -310,38 +426,6 @@ if (Notifications) {
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function procesarAlarma(value, match) {
     let horas = parseInt(match[1]);
     let minutos = match[2] ? parseInt(match[2]) : 0;
@@ -357,8 +441,24 @@ async function procesarAlarma(value, match) {
     const idUnico = Math.floor(Math.random() * 1000000);
     let list = JSON.parse(localStorage.getItem('reminders') || '[]');
     
-    // Forzamos el emoji ⏰ ya que esta sección ya no tiene selector
-    list.push({ id: idUnico, text, time: fullTime, emoji: "⏰", notified: false });
+    // --- AQUÍ ESTÁ EL TRUCO: Capturamos la hora de creación ---
+    const ahora = new Date();
+    const creadoEl = ahora.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+    });
+
+    // Guardamos 'createdAt' en el objeto
+    list.push({ 
+        id: idUnico, 
+        text, 
+        time: fullTime, 
+        emoji: "⏰", 
+        notified: false,
+        createdAt: creadoEl // <--- Nueva propiedad "marcada"
+    });
+    
     localStorage.setItem('reminders', JSON.stringify(list));
 
     
@@ -389,50 +489,6 @@ async function procesarAlarma(value, match) {
 }
 requestNotificationPermission();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function procesarTarea(value) {
     let text = value.trim();
     if (!text) return; // Si no hay texto, no hacemos nada
@@ -447,25 +503,6 @@ function procesarTarea(value) {
     
     localStorage.setItem('tasks', JSON.stringify(list));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // 7. RENDERIZADO GENERAL
@@ -584,19 +621,30 @@ function drawTasks(list, containerId, isCompletedOrAlarm, key) {
         const isTaskOverdue = item.date && !item.completed && isOverdue(item.date);
         const urgentClass = isTaskOverdue ? 'urgent' : '';
         return `
-        <div class="reminder-card ${item.completed ? 'completed-task' : ''} ${urgentClass}" 
-             data-id="${item.id}" data-key="${key}" 
-             onclick="openTaskSheet(${item.id})">
-            <div class="card-info">
-                <span class="category-emoji">${item.emoji || '📝'}</span>
-                <span class="task-text-content">${item.text} ${isTaskOverdue ? '<span style="color:var(--error); font-size:11px; font-weight:bold; margin-left:6px;">(Vencida)</span>' : ''}</span>
-            </div>
-            <div class="actions">
-                <button onclick="event.stopPropagation(); toggleTaskComplete(${item.id})" class="btn-check">
-                    ${item.completed ? '↩️' : '✓'}
-                </button>
+       <div class="reminder-card ${item.completed ? 'completed-task' : ''} ${urgentClass}" 
+     data-id="${item.id}" data-key="${key}" 
+     onclick="openTaskSheet(${item.id})">
+    <div class="card-info">
+        <span class="category-emoji">${item.emoji || '📝'}</span>
+        <div class="task-data-wrapper">
+            <span class="task-text-content">
+                ${item.text} 
+                ${isTaskOverdue ? '<span style="color:var(--error); font-size:11px; font-weight:bold; margin-left:6px;">(Vencida)</span>' : ''}
+            </span>
+            
+            <div class="time-badges-container">
+                ${item.time ? `<span class="badge-alarm">🔔 ${item.time}</span>` : ''}
+                
+              
             </div>
         </div>
+    </div>
+    <div class="actions">
+        <button onclick="event.stopPropagation(); toggleTaskComplete(${item.id})" class="btn-check">
+            ${item.completed ? '↩️' : '✓'}
+        </button>
+    </div>
+</div>
     `}).join('');
     
     attachLongPressEvents();
@@ -642,11 +690,6 @@ window.completeTask = (id) => {
     updateComboUI(); // ¡AÑADE ESTA LÍNEA AQUÍ!
 };
 
-
-
-
-
-
 // 9. BARRA DE PROGRESO
 function updateProgress() {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -676,12 +719,6 @@ function updateProgress() {
 // INICIO
 renderAll();
 
-
-
-
-
-
-
 // Función auxiliar para calcular urgencia
 function calcularDiferenciaMinutos(h1, h2) {
     const [hor1, min1] = h1.split(':').map(Number);
@@ -689,49 +726,45 @@ function calcularDiferenciaMinutos(h1, h2) {
     return (hor2 * 60 + min2) - (hor1 * 60 + min1);
 }
 
-
-
-
-
 // 12. EL VIGILANTE DE ALARMAS BLINDADO
-setInterval(() => {
-    const ahora = new Date();
-    const horaActual = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+// Detectamos si estamos en la Web o en el Celular
+const isWeb = typeof Capacitor === 'undefined' || Capacitor.getPlatform() === 'web';
 
-    const lista = JSON.parse(localStorage.getItem('reminders') || '[]');
-    let huboCambios = false;
+if (isWeb) {
+    console.log("Modo Web detectado: Iniciando motor de notificaciones por intervalo.");
+    
+    setInterval(() => {
+        const ahora = new Date();
+        const horaActual = ahora.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    lista.forEach(r => {
-        const [hActual, mActual] = horaActual.split(':').map(Number);
-        const [hReminder, mReminder] = r.time.split(':').map(Number);
-        
-        if ((hActual * 60 + mActual) >= (hReminder * 60 + mReminder) && !r.notified) {
-            
-            // MÉTODO ROBUSTO PARA MÓVILES
-            if ('serviceWorker' in navigator && Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification("📝 " + (r.emoji || ""), {
+        const lista = JSON.parse(localStorage.getItem('reminders') || '[]');
+        let huboCambios = false;
+
+        lista.forEach(r => {
+            if (r.time === horaActual && !r.notified) {
+                
+                // Notificación de Navegador (PC)
+                if (Notification.permission === "granted") {
+                    new Notification("📝 Recordatorio", {
                         body: r.text,
-                        icon: "https://cdn-icons-png.flaticon.com/512/559/559339.png",
-                        vibrate: [200, 100, 200, 100, 200], // Patrón de vibración más fuerte
-                        tag: 'reminder-' + r.id // Evita que se dupliquen notificaciones
+                        icon: "https://cdn-icons-png.flaticon.com/512/559/559339.png"
                     });
-                });
+                }
+
+                r.notified = true;
+                huboCambios = true;
+                
+                // Se borra automáticamente después de 20 segundos
+                setTimeout(() => { window.deleteItem('reminders', r.id); }, 20000); 
             }
+        });
 
-            r.notified = true;
-            huboCambios = true;
-            
-            // Aumentamos el tiempo a 20 segundos para que te dé tiempo de leerla antes de que se borre
-            setTimeout(() => { deleteItem('reminders', r.id); }, 20000); 
+        if (huboCambios) {
+            localStorage.setItem('reminders', JSON.stringify(lista));
+            renderAll();
         }
-    });
-
-    if (huboCambios) {
-        localStorage.setItem('reminders', JSON.stringify(lista));
-        renderAll();
-    }
-}, 10000);
+    }, 10000); // Revisa cada 10 segundos
+}
 
 
 
@@ -796,34 +829,6 @@ async function checkSystemHealth() {
     }
 }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 1. Lleva el recordatorio al input principal
-
-
-
 // 2. Modifica el evento del addBtn para que sepa si está creando o editando
 
 navigator.serviceWorker.addEventListener('message', (event) => {
@@ -842,52 +847,6 @@ navigator.serviceWorker.addEventListener('message', (event) => {
         alert("Pospuesto 5 minutos");
     }
 });             
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Al guardar (addBtn), usa selectedEmoji como parte del texto o como una propiedad nueva.
 // CONTROLADOR DEL TEMA (Oscuro / Claro)
@@ -975,17 +934,19 @@ cancelResetBtn.addEventListener('click', () => {
 
 // 3. Si le da a "Sí, reiniciar", ejecutamos la limpieza
 confirmResetBtn.addEventListener('click', () => {
-    // Ponemos contadores a cero
     localStorage.setItem('totalCreatedToday', 0);
     localStorage.setItem('completedToday', 0);
-    localStorage.setItem('tasks', '[]'); // Vaciamos la lista visual
+    localStorage.setItem('tasks', '[]'); 
+    localStorage.setItem('reminders', '[]'); // 1. Limpiamos recordatorios también
+
+    // 2. CANCELAMOS TODO EN EL SISTEMA OPERATIVO
+    if (Notifications) {
+        Notifications.cancelAll(); 
+        console.log("Todas las alarmas del sistema han sido canceladas");
+    }
     
-    // Refrescamos la UI
     renderAll();
-    updateComboUI(); // Apaga el fuego
-    
-    
-    // Cerramos el modal
+    updateComboUI(); 
     modal.classList.remove('active');
 });
 
@@ -1074,12 +1035,6 @@ if (openTaskSheetBtn) {
     });
 }
 
-
-
-
-
-
-
 /// 1. Buscamos todos los botones del menú inferior
 document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1164,21 +1119,9 @@ if (saveTaskBtn) {
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
 // ==========================================
 // LÓGICA DE GESTOS TÁCTILES (SWIPE)
 // ==========================================
-
 
 function attachLongPressEvents() {
     const cards = document.querySelectorAll('.reminder-card');
@@ -1316,7 +1259,6 @@ window.editItem = (key, id, text) => {
 };
 // Botón Copiar
 
-
 document.getElementById('menuCopyBtn').onclick = () => {
     if (selectedTaskData) {
         // Copiar el texto al portapapeles nativo
@@ -1348,42 +1290,107 @@ function showCopyToast() {
     }, 1500);
 }
 
+// --- BUSCADOR Y FILTROS ---
+function handleNoteSearch() {
+    renderNotes();
+}
+
+function filterNotes(cat) {
+    currentNoteFilter = cat;
+    document.querySelectorAll('.note-cat-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(cat) || (cat === 'all' && btn.innerText === 'Todas'));
+    });
+    renderNotes();
+}
+
+// --- ADJUNTAR FOTOS (Requiere Capacitor Camera) ---
+async function attachPhoto() {
+    if (typeof Capacitor === 'undefined') return alert("Solo disponible en el celular");
+    
+    const image = await Capacitor.Plugins.Camera.getPhoto({
+        quality: 60, // Bajamos la calidad para no saturar el localStorage
+        resultType: 'base64'
+    });
+    
+    const imgTag = `<img src="data:image/jpeg;base64,${image.base64String}" style="width:100%; border-radius:10px; margin: 10px 0;">`;
+    noteImages.push(imgTag);
+    // Añadimos visualmente al editor
+    document.getElementById('noteInput').value += "\n[Imagen adjunta]\n";
+}
+
+// Actualiza tu función renderNotes para incluir el filtro
+
 function renderNotes() {
     const notes = JSON.parse(localStorage.getItem('notes') || '[]');
     const container = document.getElementById('notesList');
+    const searchTerm = document.getElementById('noteSearchInput')?.value.toLowerCase() || "";
+
     if (!container) return;
 
-    // 1. Mensaje de "No hay notas" con el nuevo estilo
-    if (notes.length === 0) {
+    // 1. Filtrado inteligente
+    const filtered = notes.filter(n => {
+        const matchesSearch = (n.title?.toLowerCase().includes(searchTerm)) || 
+                             (n.content?.toLowerCase().includes(searchTerm));
+        const matchesCat = currentNoteFilter === 'all' || n.category === currentNoteFilter;
+        return matchesSearch && matchesCat;
+    });
+
+    // 2. Estado vacío
+    if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <span>🗒️</span>
-                <p>No tienes notas guardadas.</p>
+                <p>${searchTerm ? 'No se encontraron resultados.' : 'No tienes notas guardadas.'}</p>
             </div>`;
         return;
     }
 
-    // 2. Renderizado Compacto: Emoji al lado del texto
-    container.innerHTML = notes.map(n => `
-       <div class="note-card reminder-card" 
+    // 3. Renderizado con tu estilo original, respetando 'content' y 'title'
+    container.innerHTML = filtered.map(n => {
+        const icons = { 'Trabajo': '💼', 'Estudio': '📚', 'Personal': '🏠' };
+        const catIcon = icons[n.category] || '';
+
+        return `
+        <div class="note-card reminder-card" 
             data-id="${n.id}" 
             data-key="notes" 
-            data-text="${n.content.replace(/"/g, '&quot;')}"
-            onclick="window.openEditNote(${n.id})"> <div class="card-info" style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;"></span> <div style="display: flex; flex-direction: column; overflow: hidden;">
-                <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${n.title || 'Sin título'}
-                </div>
-                <div class="task-text-content" style="font-size: 12px; opacity: 0.7;">
-                    ${n.content}
+            data-text="${n.content ? n.content.replace(/"/g, '&quot;') : ''}"
+            onclick="window.openEditNote(${n.id})">
+            <div class="card-info" style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 18px;">${catIcon}</span>
+                <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                    <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${n.title || 'Sin título'}
+                    </div>
+                    <div class="task-text-content" style="font-size: 12px; opacity: 0.7;">
+                        ${n.content || ''}
+                    </div>
+                    ${n.images && n.images.length > 0 ? `
+    <div style="display: flex; gap: 5px; margin-top: 8px;">
+        ${n.images.map(img => `<img src="${img}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">`).join('')}
+    </div>
+` : ''}
                 </div>
             </div>
-        </div>
-    </div>
-    `).join('');
+        </div>`;
+    }).join('');
 
-    attachLongPressEvents(); 
+    // ¡CRÍTICO! Llamamos a tu función para que la app no se "pegue"
+    if (typeof attachLongPressEvents === 'function') {
+        attachLongPressEvents();
+    }
 }
+
+// Funciones globales para filtrar y buscar
+window.filterNotes = (cat) => {
+    currentNoteFilter = cat;
+    document.querySelectorAll('.note-cat-chip').forEach(btn => {
+        btn.classList.toggle('active', (cat === 'all' && btn.innerText.includes('Todas')) || btn.innerText.includes(cat));
+    });
+    renderNotes();
+};
+
+window.handleNoteSearch = () => renderNotes();
 
 // 1. Función para abrir el panel
 function openTaskSheet(id = null) {
@@ -1424,7 +1431,6 @@ function openTaskSheet(id = null) {
 // Vincular el nuevo botón flotante de tareas
 document.getElementById('openTaskSheetBtn').addEventListener('click', () => openTaskSheet());
 
-
 function saveTaskFromSheet() {
     const newText = document.getElementById('sheetTaskInput').value.trim();
     const fabTask = document.getElementById('openTaskSheetBtn'); // El botón + verde
@@ -1462,6 +1468,8 @@ function saveTaskFromSheet() {
         fabTask.style.display = 'flex';
     }
     
+   
+    
     
     renderAll();
     if (isCalendarView) {
@@ -1471,8 +1479,9 @@ function saveTaskFromSheet() {
    
 }
 
-// 3. Vincular los eventos de los botones (Pon esto donde tengas tus otros listeners)
 
+
+// 3. Vincular los eventos de los botones (Pon esto donde tengas tus otros listeners)
 // Asegúrate de que el botón de volver también cierre correctamente
 document.getElementById('closeSheetBtn').onclick = saveTaskFromSheet;
 
@@ -1484,16 +1493,24 @@ window.addEventListener('resize', () => {
 
     if (currentHeight < initialHeight * 0.8) {
         // El teclado está abierto (la pantalla se redujo más de un 20%)
-        bottomNav.style.visibility = 'hidden';
-        bottomNav.style.opacity = '0';
+        if (bottomNav) {
+            bottomNav.style.visibility = 'hidden';
+            bottomNav.style.opacity = '0';
+        }
+        document.body.classList.add('keyboard-open');
+        const editorHeader = document.querySelector('.editor-header');
+        if (editorHeader) {
+            editorHeader.style.bottom = '0px'; 
+        }
     } else {
         // El teclado se cerró
-        bottomNav.style.visibility = 'visible';
-        bottomNav.style.opacity = '1';
+        if (bottomNav) {
+            bottomNav.style.visibility = 'visible';
+            bottomNav.style.opacity = '1';
+        }
+        document.body.classList.remove('keyboard-open');
     }
 });
-
-
 
 document.getElementById('taskSearchInput').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
@@ -1535,6 +1552,7 @@ document.getElementById('openCalendarBtn').onclick = () => {
     document.getElementById('view-today').style.display = 'none';
     document.getElementById('view-calendar').style.display = 'block';
     renderCalendar();
+    
 };
 
 document.getElementById('closeCalendarBtn').onclick = () => {
@@ -1552,6 +1570,9 @@ document.getElementById('nextMonth').onclick = () => {
     calendarDate.setMonth(calendarDate.getMonth() + 1);
     renderCalendar();
 };
+
+// Identificamos el botón de menú (el de las tres rayas o puntos)
+
 
 function renderCalendar() {
     const container = document.getElementById('calendar-container');
@@ -1572,7 +1593,9 @@ function renderCalendar() {
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateKey = `${day}/${month + 1}/${year}`;
+        const d = day.toString().padStart(2, '0');
+const m = (month + 1).toString().padStart(2, '0');
+const dateKey = `${d}/${m}/${year}`;
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
         dayDiv.innerText = day;
@@ -1592,15 +1615,107 @@ function renderCalendar() {
         container.appendChild(dayDiv);
     }
 }
-
 // Función para dibujar las tareas de un día específico en el calendario
 function renderCalendarTasks(date) {
+    // 1. Función para normalizar (quitar ceros extra o ponerlos)
+    // Esto convierte "16/3/2026" y "16/03/2026" en lo mismo
+    const normalize = (d) => d.split('/').map(n => parseInt(n)).join('/');
+
     const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const tasksForDay = allTasks.filter(t => t.date === date);
     
-    // Usamos tu función drawTasks ya existente para mantener el diseño
+    // 2. Normalizamos la fecha que buscamos
+    const buscaFecha = normalize(date);
+
+    // 3. Filtramos comparando ambas fechas normalizadas
+    const tasksForDay = allTasks.filter(t => {
+        // Si por alguna razón t.date no existe, evitamos que la app explote
+        if (!t.date) return false;
+        return normalize(t.date) === buscaFecha;
+    });
+
+    console.log(`--- Filtro Inteligente ---`);
+    console.log(`Buscando: ${buscaFecha} | Encontradas: ${tasksForDay.length}`);
+
+    // 4. Dibujamos
     drawTasks(tasksForDay, 'calendarTaskList', false, 'tasks');
     
-    // Actualizamos el subtítulo
-    document.getElementById('selectedDateTitle').innerText = `Tareas para el ${date}`;
+    const title = document.getElementById('selectedDateTitle');
+    if (title) title.innerText = `Tareas para el ${date}`;
+}
+
+
+btnJava.onclick = (e) => {
+    const isExpanded = wrapper.classList.contains('expanded');
+    
+    if (!isExpanded) {
+        wrapper.classList.add('expanded');
+        inputField.focus();
+    } else if (inputField.value === '') {
+        // Si ya está abierta pero no has escrito nada, la cerramos al tocar la lupa
+        wrapper.classList.remove('expanded');
+    }
+};
+
+// 2. Al hacer clic EN CUALQUIER OTRA PARTE de la pantalla
+document.addEventListener('click', (e) => {
+    // Si el clic NO fue dentro del buscador y la barra está abierta...
+    if (!wrapper.contains(e.target) && wrapper.classList.contains('expanded')) {
+        // Solo la cerramos si el input está vacío (para no perder lo que buscaste)
+        if (inputField.value === '') {
+            wrapper.classList.remove('expanded');
+        }
+    }
+});
+
+// 3. Al quitar el foco del teclado (Blur)
+inputField.onblur = () => {
+    // Si el usuario deja de escribir y no hay texto, se contrae
+    setTimeout(() => { // Usamos un mini-delay para no chocar con el clic del botón
+        if (inputField.value === '') {
+            wrapper.classList.remove('expanded');
+        }
+    }, 200);
+};
+
+// Si el usuario borra la búsqueda en el código de filtrar tareas, 
+// recuerda usar el nuevo ID: document.getElementById('taskSearchValue').value
+function refreshApp() {
+       // Actualiza la lista de hoy
+    renderNotes();    // Actualiza las notas
+    if (window.fullCalendarInstance) { 
+        // Si usas una librería como FullCalendar, usa su método interno
+        window.fullCalendarInstance.refetchEvents();
+    } else {
+        renderCalendar(); // Tu función manual
+    }
+}
+
+// Úsala siempre después de un cambio:
+localStorage.setItem('tasks', JSON.stringify(tasks));
+refreshApp();
+
+function saveReminder() {
+    const text = document.getElementById('reminderInput').value;
+    const now = new Date();
+    
+    // Formato: 02:30 PM
+    const timeCreated = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+    });
+
+    const newReminder = {
+        id: Date.now(),
+        text: text,
+        createdAt: timeCreated, // La "marca" de tiempo
+        status: 'active'
+    };
+
+    // Guardar en tu localStorage de recordatorios
+    let reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+    reminders.push(newReminder);
+    localStorage.setItem('reminders', JSON.stringify(reminders));
+    
+    procesarAlarma();
 }

@@ -9,40 +9,72 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
    <button id="menuBtn" style="position: fixed; top: 15px; left: 15px; z-index: 1000; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-main);">☰</button>
 <div id="sideMenu" class="side-menu-overlay">
     <div class="side-menu-content">
         <div class="side-menu-header">
-            <h3>Solo Recordar 📝</h3>
+            <h3>Solo Recordar </h3>
             
             <button id="closeMenuBtn" class="btn-text">✕</button>
         </div>
-        
         <div class="side-menu-body">
-            <div class="menu-item active" data-view="view-today"><span>🏠</span> Inicio (Hoy)</div>
-            <div class="menu-item" data-view="view-profile"><span>📊</span> Mi Perfil</div>
-            <div class="menu-item"><span>⭐</span> Tareas Importantes</div>
-            
-            <hr class="menu-divider">
-            
-            <div class="menu-item"><span>⚙️</span> Ajustes</div>
-            <div id="themeToggleMenu" class="menu-item"><span>🌓</span> Temas (Modo Oscuro)</div>
-            <div class="menu-item"><span>📱</span> Widget</div>
-            
-            <hr class="menu-divider">
-            
-            <div class="menu-item"><span>🌟</span> Calificar aplicación</div>
-            <div class="menu-item"><span>❓</span> Preguntas frecuentes</div>
-            <div class="menu-item"><span>📧</span> Contacto</div>
-            <div class="menu-item"><span>☕</span> Donar</div>
-        </div>
-        
-        <div class="side-menu-footer">
+    <div class="menu-item " data-view="view-today">
+        <div class="menu-icon-wrapper blue"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+        Inicio (Hoy)
+    </div>
+    <div class="menu-item" data-view="view-profile">
+        <div class="menu-icon-wrapper green"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+        Mi Perfil
+    </div>
+    <div class="menu-item">
+        <div class="menu-icon-wrapper red"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+        Tareas Importantes
+    </div>
+    
+    <hr class="menu-divider">
+    
+    <div class="menu-item">
+        <div class="menu-icon-wrapper gray"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+        Ajustes
+    </div>
+    <div id="themeToggleMenu" class="menu-item">
+        <div class="menu-icon-wrapper purple"><svg viewBox="0 0 24 24"><path d="M12 3v1h8v12h-8v1h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8zm-1 12.14L7.14 11.29 11 7.43V4L4 11l7 7v-2.86z"/></svg></div>
+        Temas (Modo Oscuro)
+    </div>
+    <div class="menu-item">
+        <div class="menu-icon-wrapper orange"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+        Widget
+    </div>
+    
+    <hr class="menu-divider">
+    
+    <div class="menu-item">
+        <div class="menu-icon-wrapper yellow"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+        Calificar aplicación
+    </div>
+    <div class="menu-item">
+        <div class="menu-icon-wrapper teal"><svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></div>
+        Preguntas frecuentes
+    </div>
+    <div class="menu-item">
+        <div class="menu-icon-wrapper indigo"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+        Contacto
+    </div>
+    <div class="menu-item">
+        <div class="menu-icon-wrapper pink"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+        Donar
+    </div>
+</div>
+<div class="side-menu-footer">
             <p>Versión 1.0.0 (Beta)</p>
         </div>
+        
+       
+</div>
+        
     </div>
 </div>
     <main class="container">
@@ -50,18 +82,13 @@
         
         
         <section id="view-today" class="view">
-            <h1>Hoy </h1>
-            
-            
-
-            <div class="progress-container">
-                <div id="progressBar" class="progress-bar"></div>
-            </div>
-            <span id="progressText">0% completado</span>
-
-             <div class="samsung-header">
+                <div class="samsung-header">
     <h1 class="main-title"></h1>
     <div class="header-actions">
+
+        <button id="openFocusBtn" class="action-btn">
+    <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+</button>
         <button id="addNewCategoryBtn" class="action-btn">
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         </button>
@@ -79,11 +106,40 @@
             <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         </button>
 
-        <button id="menuBtnHeader" class="action-btn">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </button>
+        
     </div>
 </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; position: relative;">
+                <button id="taskViewToggle" class="task-view-toggle" onclick="toggleTaskView()">Todas</button>
+                <h1 id="mainDateTitle" style="margin: 0; text-transform: capitalize;">Hoy</h1>
+                <div id="moodWidget" class="mood-widget">
+                    <div id="moodBtn" class="mood-widget-btn" title="¿Cómo te sientes hoy?">🤔</div>
+                    <div class="mood-widget-options">
+                        <span class="mood-option" data-mood="😄">😄</span>
+                        <span class="mood-option" data-mood="🙂">🙂</span>
+                        <span class="mood-option" data-mood="😑">😑</span>
+                        <span class="mood-option" data-mood="😕">😕</span>
+                        <span class="mood-option" data-mood="😩">😩</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <span id="progressText">0% completado</span>
+            
+            <!-- Contenedor para el toggle y la vista de semana -->
+            <div id="tasksDisplayArea" style="position: relative; margin-top: 0;">
+                <!-- El toggle y la week-view se inyectarán aquí -->
+            </div>
+            
+            <div class="filter-container" style="margin-bottom: 10px;">
+   
+</div>
+
+      
 
    
 </div>
@@ -91,21 +147,14 @@
 
 
 
-   <div class="filter-container" style="margin-bottom: 15px;">
-    <button class="filter-chip active" data-filter="all">🏠 Todas</button>
-    <button class="filter-chip" data-filter="📝">📝 General</button>
-    <button class="filter-chip" data-filter="🌐">🌐 Redes</button>
-    <button class="filter-chip" data-filter="🗄️">🗄️ BD</button>
-    <button class="filter-chip" data-filter="⚛️">⚛️ Física</button>
-    <button class="filter-chip" data-filter="💻">💻 Código</button>
-    <button class="filter-chip" data-filter="🎮">🎮 Ocio</button>
-</div>
+   
 
 
-<h3 class="section-subtitle">Tareas pendientes</h3>
+
+<h3 id="pendingTasksTitle" class="section-subtitle">Tareas pendientes</h3>
     <div id="taskList" class="list-container"></div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+    <div id="completedTasksHeader" style="display: flex; justify-content: space-between; align-items: center; ">
         <h3 class="section-subtitle">Tareas completadas</h3>
         <button id="toggleCompletedBtn" class="btn-text" style="font-size: 12px;">Mostrar/Ocultar</button>
     </div>
@@ -115,11 +164,14 @@
 
 
         </section>
+        
 
            <section id="view-calendar" class="view" style="display:none;">
             
-    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-        <button id="closeCalendarBtn" class="btn-text" style="font-size: 20px;">← Volver</button>
+    <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 20px;">
+        <button id="closeCalendarBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
         <h2 style="margin: 0; font-size: 20px;">Calendario</h2>
     </div>
     
@@ -129,19 +181,87 @@
         <button id="nextMonth">＞</button>
     </div>
 
+    <div class="calendar-weekdays">
+        <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
+    </div>
+
     <div id="calendar-container" class="calendar-grid">
         </div>
 
     <h3 id="selectedDateTitle" class="section-subtitle">Tareas del día</h3>
     <div id="calendarTaskList" class="list-container"></div>
     <div style="text-align: right; margin-top: 10px;">
-    <h3 c  class="section-subtitle">+ Agregar para este día</h3>
+    <h3 class="section-subtitle">+ Agregar para este día</h3>
         
    
 </div>
 </section>
 
 
+<section id="view-organize" class="view" style="display:none; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 20px;">
+        <button id="closeOrganizeBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 style="margin: 0; font-size: 20px;">Organizar tu día</h2>
+    </div>
+    
+    <div class="org-tabs-container" style="display: flex; background: var(--bg-alt); border-radius: 20px; padding: 4px; margin: 10px 0;">
+        <button id="newTaskListBtn" class="org-tab-btn active">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+            <span>Nueva Lista</span>
+        </button>
+        <button id="viewPendingTasksBtn" class="org-tab-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>Pendientes</span>
+        </button>
+    </div>
+    
+    <div id="organizeContentArea" style="margin-top: 20px; display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+        
+        <!-- 1. Contenedor para Nueva Lista de Tareas -->
+        <div id="organizeNewList" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+            <input type="text" id="planMainTitle" placeholder="Mi Plan de Hoy" style="font-size: 26px; font-weight: 800; border: none; background: transparent; padding: 0 10px; margin-bottom: 5px; outline: none; color: var(--text-main); letter-spacing: -0.5px;">
+            <input type="text" id="planMainDesc" placeholder="Breve descripción de lo que harás..." style="font-size: 15px; border: none; background: transparent; padding: 0 10px; margin-bottom: 20px; outline: none; color: var(--text-sub);">
+            
+            <div id="planCardsCarousel" class="plan-carousel">
+                <!-- Las tarjetas se inyectarán aquí con JavaScript -->
+            </div>
+            <button id="addPlanCardBtn" class="btn-text" style="margin-top: 15px; margin-bottom: 15px; align-self: center; background: var(--bg-alt); border-radius: 16px; padding: 12px 25px; font-weight: 600; border: 1px solid var(--border-soft);">+ Añadir otra tarjeta</button>
+        </div>
+
+        <!-- 2. Contenedor para Ver Tareas Pendientes (TickTick Style) -->
+        <div id="organizePending" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+            <h3 style="margin: 0 10px 15px 10px; font-size: 20px; color: var(--text-main);">Pendientes de Hoy</h3>
+            <div id="pendingCardsCarousel" class="plan-carousel">
+                <!-- Las tarjetas de pendientes se inyectarán aquí con JavaScript -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="view-history" class="view" style="display:none; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 20px;">
+        <button id="closeHistoryBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 style="margin: 0; font-size: 20px;">Tareas Anteriores</h2>
+    </div>
+    
+    <div class="org-tabs-container" style="display: flex; background: var(--bg-alt); border-radius: 20px; padding: 4px; margin: 10px 0;">
+        <button id="tabOverdue" class="org-tab-btn active">
+            <span>Vencidas</span>
+        </button>
+        <button id="tabCompleted" class="org-tab-btn">
+            <span>Completadas</span>
+        </button>
+    </div>
+    
+    <div id="historyContentArea" style="margin-top: 15px; display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
+        <div id="historyOverdueList"></div>
+        <div id="historyCompletedList" style="display:none;"></div>
+    </div>
+</section>
 
       <section id="view-notes" class="view" style="display:none;">
     <h1>Notas</h1>
@@ -156,66 +276,94 @@
     <input type="text" id="noteSearchInput" placeholder="Buscar en mis notas..." oninput="handleNoteSearch()">
 </div>
         
-    <div class="notes-category-bar">
-        <button class="note-cat-chip active" onclick="filterNotes('all')">Todas</button>
-        <button class="note-cat-chip" onclick="filterNotes('Trabajo')">💼 Trabajo</button>
-        <button class="note-cat-chip" onclick="filterNotes('Estudio')">📚 Estudio</button>
-        <button class="note-cat-chip" onclick="filterNotes('Personal')">🏠 Personal</button>
+    <div id="notesCategoryCarousel" class="notes-category-carousel">
+        <!-- Inyectado por JS -->
     </div>
-    
     
 </div>
     
+    <h3 class="section-subtitle">Todas las notas</h3>
     <div id="notesList" class="list-container">
         </div>
 
    
 </section>
 
+<section id="view-category-notes" class="view" style="display:none; overflow: hidden; background: var(--bg-app);">
+    <div class="samsung-header" style="margin-bottom: 10px;">
+        <button id="closeCategoryNotesBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 id="categoryNotesTitle" style="margin: 0; font-size: 22px; flex-grow: 1; text-align: left; padding-left: 10px; font-weight: 700;">Categoría</h2>
+        <button id="deleteCategoryNotesBtn" class="action-btn" style="display:none; color: var(--error);">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+    </div>
+    
+    <div id="categoryNotesList" class="list-container" style="flex: 1; overflow-y: auto;">
+    </div>
+</section>
+
 <section id="view-notes-editor" class="view" style="display:none; padding: 20px;">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <button id="cancelNoteBtn" class="btn-text" style="font-size: 18px;">← Volver</button>
-        <button id="addNoteBtn" style="background-color: var(--pastel-yellow); color: #856404; padding: 8px 20px; border-radius: 20px; font-weight: bold;">Guardar</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <button id="cancelNoteBtn" class="action-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="editor-header" style="display: flex; align-items: center; gap: 6px;">
+            <div class="toolbar-item" title="Categoría" style="transform: scale(0.9);">
+                <div class="icon-btn" id="noteCategoryIconBtn">
+                    <span style="font-weight:700; color:var(--accent);">G</span>
+                </div>
+                <select id="noteCategorySelect" class="hidden-input-overlay" onchange="const icon = this.options[this.selectedIndex].dataset.icon || 'G'; const color = this.options[this.selectedIndex].dataset.color || 'var(--accent)'; document.getElementById('noteCategoryIconBtn').innerHTML = '<span style=\'font-weight:700; color:' + color + ';\'>' + icon + '</span>';">
+                    <!-- Opciones inyectadas por JS -->
+                </select>
+            </div>
+            <div class="toolbar-item" title="Añadir foto" style="transform: scale(0.9);">
+                <button id="addPhotoBtn" class="icon-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </button>
+            </div>
+            <div class="toolbar-item" title="Dibujar" style="transform: scale(0.9);">
+                <button id="toggleDrawBtn" class="icon-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+            </div>
+            <button id="addNoteBtn" style="background-color: var(--pastel-yellow); color: #856404; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-left: 4px;">Guardar</button>
+        </div>
     </div>
-     <div class="editor-header" style="justify-content: space-between; padding: 10px;">
-    <select id="noteCategorySelect" style="background: var(--bg-alt); border: none; border-radius: 8px; font-size: 12px; padding: 5px;">
-        <option value="General">📁 General</option>
-        <option value="Trabajo">💼 Trabajo</option>
-        <option value="Estudio">📚 Estudio</option>
-        <option value="Personal">🏠 Personal</option>
-    </select>
-    <button id="addPhotoBtn" class="btn-text" style="font-size: 18px;">📷</button>
-</div>
-    <input type="text" id="noteTitleInput" placeholder="Título" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 24px; font-weight: 800; outline: none; margin-bottom: 15px; color: var(--text-main);">
+    <input type="text" id="noteTitleInput" placeholder="Título" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 24px; font-weight: 800; outline: none; color: var(--text-main);">
+    
+    
 
     <div class="editor-container" style="background: transparent; padding: 0;">
-        <textarea id="noteInput" placeholder="Empieza a escribir tu nota..." rows="18" style="width: 100%; border: none; background: transparent; font-family: inherit; font-size: 16px; resize: none; outline: none; line-height: 1.6; color: var(--text-main);"></textarea>
+        <div class="canvas-wrapper" id="canvasWrapper" style="display: none; position: absolute; top: 50px; left: 0; width: 100%; height: 80%; z-index: 10;">
+            <canvas id="noteCanvas"></canvas>
+            
+        </div>
+        <textarea id="noteInput" placeholder="Empieza a escribir tu nota..." rows="10" style="height: 10%; border: none; background: transparent; font-family: inherit; font-size: 16px; resize: none; outline: none; line-height: 1.6; color: var(--text-main);"></textarea>
+         <div id="notePhotosPreview" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px;"></div>
     </div>
-    <div id="notePhotosPreview" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px;"></div>
+   
 </section>
 
         <section id="view-reminders" class="view" style="display:none;">
-            <h2>Recordatorios </h2>
-
-          
-            
-
-            <div class="input-group">
-                <input type="text" id="taskInput" placeholder="Ejemplo: 10:30am" autocomplete="off">
-                <button id="addBtn">Fijar</button>
-                <button id="cancelBtn" style="display: none; background: #555; margin-left: 5px;">Cancelar</button>
-            </div>
-
-            <div class="presets">
-                <button type="button" class="preset-btn" data-min="01">+01 min</button>
-                <button type="button" class="preset-btn" data-min="05">+05 min</button>
-                <button type="button" class="preset-btn" data-min="60">+1 hora</button>
-                <button type="button" class="preset-btn" data-min="1440">Mañana</button>
-            </div> 
+            <h2 id="remindersMainTitle">Recordatorios</h2>
+    <div class="header-actions" style="justify-content: flex-end; margin-bottom: 15px; width: 100%;">
+        <button id="tabRapidosBtn" class="action-btn active-tab" onclick="switchAlarmTab('rapidos')" title="Alarmas Rápidas">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </button>
+        <button id="tabFrecuentesBtn" class="action-btn" onclick="switchAlarmTab('frecuentes')" title="Hábitos Frecuentes">
+            <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        </button>
+        <button class="action-btn" onclick="openHabitSelection()" title="Añadir Hábito">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+    </div>
 
             <section class="panel">
-                <h3>🔔 Próximas Alarmas</h3>
+                
+                <div id="activeHabitsRow" class="active-habits-row"></div>
                 <div id="reminderList" class="list-container"></div>
             </section>
         </section>
@@ -253,9 +401,52 @@
             </div>
     </div>
 
-    <div style="margin-top: 40px; text-align: center; border-top: 1px solid var(--border-soft); padding-top: 20px;">
-        <p style="font-size: 13px; color: var(--text-sub);">¿Limpiar historial?</p>
-        <button id="resetDayBtn" class="btn-reset">🔄 Reiniciar Día</button>
+  <div style="margin-top: 40px; text-align: center; border-top: 1px solid var(--border-soft); padding-top: 20px;">
+    <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 12px;">¿Limpiar historial?</p>
+    
+    <button id="resetDayBtn" class="btn-reset">
+        <svg viewBox="0 0 24 24" class="broom-icon-svg">
+            <path d="M11 2h2v10h-2V2z" />
+            <path d="M4 14h16v2H4v-2z" />
+            <path d="M6 16v5h2v-5H6zm4 0v5h2v-5h-2zm4 0v5h2v-5h-2zm4 0v5h2v-5h-2z" />
+        </svg>
+        <span>Reiniciar Día</span>
+    </button>
+</div>
+</section>
+
+<section id="view-habit-detail" class="view" style="display:none; padding: 20px; flex-direction: column;">
+    <!-- El contenido de esta vista se inyectará con JavaScript -->
+</section>
+
+<section id="view-focus" class="view focus-view" style="display:none;">
+    <div class="zen-overlay"></div>
+    <div class="zen-container">
+        <button id="closeFocusBtn" class="close-zen">✕</button>
+        <button id="changeBgBtn" class="change-bg-zen" title="Cambiar fondo">🖼️</button>
+        
+        <div class="zen-timer-wrapper">
+            <svg class="timer-svg" viewBox="0 0 100 100">
+                <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                <circle id="timerProgress" class="timer-bar" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="timer-text">
+                <h1 id="focusTimer">25:00</h1>
+                <p>Tiempo de Enfoque</p>
+            </div>
+        </div>
+
+        <div class="zen-controls">
+            <div class="zen-presets">
+                <button onclick="setFocusTime(1)">01 min</button>
+                <button onclick="setFocusTime(25)">25 min</button>
+                <button onclick="setFocusTime(50)">50 min</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 40px; height: 60px; justify-content: center; align-items: center; width: 100%;">
+                <button id="startFocusBtn" class="btn-zen-start" style="margin-top: 0; padding: 14px 24px; white-space: nowrap;">Iniciar Enfoque</button>
+                <button id="pauseFocusBtn" class="btn-zen-start" style="display: none; margin-top: 0; background-color: #f2c94c; color: #1e293b; padding: 14px 24px; white-space: nowrap;">Pausar</button>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -265,31 +456,32 @@
 
     <nav class="bottom-nav">
     <button class="nav-item active" data-view="view-today">
-      <svg viewBox="0 0 512 512" class="nav-icon icon-filled">
-        <path d="M261.56 32.47c-15.07 0-28.51 7.34-36.03 18.57L23.55 315.44c-4.53 6.75-7.11 14.71-7.11 23.23 0 22.31 18.23 40.54 40.54 40.54h11.23v100.32c0 22.31 18.23 40.54 40.54 40.54h294.5c22.31 0 40.54-18.23 40.54-40.54V379.21h11.23c22.31 0 40.54-18.23 40.54-40.54 0-8.52-2.58-16.48-7.11-23.23L297.59 51.04c-7.52-11.23-20.96-18.57-36.03-18.57zm0 248.83c-44.24 0-80.11 35.87-80.11 80.11v150.62h160.22V361.41c0-44.24-35.87-80.11-80.11-80.11z"/>
-    </svg>
-    <span>Hoy</span>
+        <div class="nav-badge" id="todayNavBadge"></div>
+        <svg viewBox="0 0 24 24" class="nav-icon">
+            <path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z"/>
+        </svg>
+        <span>Hoy</span>
     </button>
 
     <button class="nav-item" data-view="view-reminders">
-        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
-        <path d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Zm3.303,13.712-4.015-2.41a1.006,1.006,0,0,1-.488-.8V7.5a1,1,0,0,1,2,0v4.542l3.6,2.158a1,1,0,1,1-1.094,1.67Z"/>
-    </svg>
-    <span>Alarmas</span>
+        <svg viewBox="0 0 24 24" class="nav-icon">
+            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        <span>Alarmas</span>
     </button>
 
     <button class="nav-item" data-view="view-notes">
-        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
-        <path d="M19,2H8A3,3,0,0,0,5,5V19a3,3,0,0,0,3,3H19a1,1,0,0,0,1-1V3A1,1,0,0,0,19,2ZM12,15H8a1,1,0,0,1,0-2h4a1,1,0,0,1,0,2Zm4-4H8a1,1,0,0,1,0-2h8a1,1,0,0,1,0,2Z"/>
-    </svg>
-    <span>Notas</span>
+        <svg viewBox="0 0 24 24" class="nav-icon">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+        </svg>
+        <span>Notas</span>
     </button>
 
     <button class="nav-item" data-view="view-profile">
-        <svg viewBox="0 0 24 24" class="nav-icon icon-filled">
-        <path d="M12,12A5,5,0,1,0,7,7,5.006,5.006,0,0,0,12,12Zm5,2H7a5.006,5.006,0,0,0-5,5v2a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V19A5.006,5.006,0,0,0,17,14Z"/>
-    </svg>
-    <span>Perfil</span>
+        <svg viewBox="0 0 24 24" class="nav-icon">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        <span>Perfil</span>
     </button>
 </nav>
 
@@ -305,28 +497,115 @@
     </div>
     <div id="actionMenu" class="context-menu-overlay">
     <div class="menu-content">
-        <button id="menuCopyBtn" class="menu-item">📋 Copiar texto</button>
-        <button id="menuEditBtn" class="menu-item">✏️ Editar</button>
-        <button id="menuDeleteBtn" class="menu-item delete">🗑️ Eliminar </button>
-        <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px;">Cancelar</button>
+        <button id="menuCopyBtn" class="menu-item" style="margin-top: 5px; background: #ffffff; ">📋 Copiar texto</button>
+        <button id="menuDeleteBtn" class="menu-item delete" style="margin-top: 5px; background: #da4848cb; width: 93%;">🗑️ Eliminar </button>
+        <button id="menuCancelBtn" class="menu-item" style="border-top: 1px solid var(--border-soft); margin-top: 5px; background:  #54A3D6; width: 93%;">🚫 Cancelar</button>
     </div>
 </div>
-<button id="openTaskSheetBtn" class="fab-btn" style="display:flex;  ">+</button>
- <button id="openNoteEditorBtn" class="fab-btn" style="display:none;">+</button>
+<button id="openTaskSheetBtn" class="fab-btn" style="display:flex;">
+    <span class="fab-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+    </span>
+    <span class="fab-text">Añadir tarea</span>
+</button>
+<button id="openNoteEditorBtn" class="fab-btn" style="display:none;">
+    <span class="fab-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+    </span>
+    <span class="fab-text">Añadir nota</span>
+</button>
  <div id="taskBottomSheet" class="bottom-sheet">
     <div class="sheet-content">
         <div class="sheet-handle"></div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <button id="closeSheetBtn" class="btn-text">← Volver</button>
+            <button id="closeSheetBtn" class="action-btn">
+                <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
             
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="sheetCategoryLabel" style="font-size: 12px; font-weight: bold; opacity: 0.6;"></span>
-                <button id="saveTaskBtn" class="btn-save-task">➔</button>
+            <div id="topTaskOptions" style="display: flex; align-items: center; gap: 8px;">
             </div>
         </div>
-        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="10"></textarea>
+        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="3" style="min-height: 60px; padding-bottom: 20px;"></textarea>
+        
+        <div id="bottomTaskOptions" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-soft); margin-top: auto; position: sticky; bottom: -20px; background: var(--bg-app); z-index: 10; padding-bottom: 20px;">
+        </div>
+        
     </div>
 </div>
+
+<div id="imageViewerModal" class="image-viewer-overlay">
+    <button class="close-image-btn" onclick="closeImageViewer()">✕</button>
+    <img id="fullSizeImage" src="" alt="Vista previa">
+</div>
+
+<!-- MODAL DE SELECCIÓN DE HÁBITOS -->
+<div id="habitSelectionModal" class="habit-modal-overlay">
+    <div class="habit-modal-sheet">
+        <div class="habit-modal-header">
+            <h3 style="margin:0; font-size: 18px;">Elegir hábito</h3>
+            <button onclick="closeHabitSelection()" class="btn-text">✕</button>
+        </div>
+        <div class="habit-modal-body">
+            <div class="habit-grid" id="habitSelectionList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIGURACIÓN DE HÁBITO -->
+<div id="habitConfigModal" class="habit-modal-overlay">
+    <div class="habit-modal-sheet" style="background: var(--bg-app);">
+        <div class="hc-header-bg" id="hcHeaderBg">
+            <button onclick="closeHabitConfig()" class="btn-text" style="color: white; font-size: 20px;">✕</button>
+        </div>
+        <div class="hc-icon-container" id="hcIcon">💧</div>
+        
+        <div class="habit-modal-body" style="padding-top: 0; display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align: center;">
+                <h2 id="hcTitle" style="margin: 0 0 5px 0;">Hábito</h2>
+                <p id="hcMessage" style="font-size: 13px; color: var(--text-sub); margin: 0;">Mensaje motivacional</p>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--text-sub);">Nombre del hábito:</label>
+                <input type="text" id="hcInputName" style="width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border-soft);">
+            </div>
+
+            <div>
+                <label style="font-size: 13px; font-weight: 700; color: var(--text-sub);">Días a repetir:</label>
+                <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: space-between;" id="hcDaysContainer">
+                </div>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 13px; font-weight: 700; color: var(--text-sub);">Horas:</label>
+                    <button onclick="openCustomTimePickerForHabit()" style="background: var(--pastel-blue); color: var(--accent); padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: none; cursor: pointer;">+ Añadir hora</button>
+                </div>
+                <div id="hcTimesList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                </div>
+            </div>
+
+            <button onclick="saveHabitConfig()" style="background: var(--accent); color: white; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: bold; width: 100%; margin-top: 20px; border: none; cursor: pointer;">Aceptar y Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EMERGENTE INTRUSIVO (BUZÓN) -->
+<div id="popupReminderModal" class="stp-overlay" style="z-index: 10060; align-items: flex-end;">
+    <div class="stp-sheet" style="padding: 30px 25px; text-align: center; border-radius: 24px 24px 0 0; background: var(--bg-card); box-shadow: 0 -10px 40px rgba(0,0,0,0.15);">
+        <div style="font-size: 55px; margin-bottom: 15px; animation: shake 0.5s ease-in-out infinite alternate;">📫</div>
+        <h3 style="margin: 0 0 10px 0; font-size: 24px; color: var(--text-main); font-weight: 800;">¡Recordatorio Importante!</h3>
+        <p id="popupTaskText" style="font-size: 18px; color: var(--text-sub); margin-bottom: 30px; font-weight: 500; line-height: 1.4;"></p>
+        
+        <div style="display: flex; gap: 12px; width: 100%;">
+            <button class="btn-text" style="flex: 1; background: var(--bg-alt); color: var(--text-main); border: 1px solid var(--border-soft); border-radius: 14px; padding: 16px; font-weight: 600; font-size: 15px;" onclick="snoozePopupTask()">💤 Posponer (10m)</button>
+            <button style="flex: 1; background: var(--success); color: white; border-radius: 14px; padding: 16px; font-weight: 600; font-size: 15px; border: none; box-shadow: 0 4px 12px rgba(82, 189, 148, 0.3);" onclick="completePopupTask()">✓ Completar</button>
+        </div>
+    </div>
+</div>
+
+
+
 
     <script src="app.js"></script>
     <script src="capacitor.js"></script>

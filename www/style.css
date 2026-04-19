@@ -11,7 +11,7 @@
     /* Colores Pastel */
     --pastel-blue: #E7F3F8;
     --pastel-green: #EDF3EC;
-    --pastel-yellow: #FBF3DB;
+    --pastel-yellow: #ffffff;
     --pastel-orange: #FDECC8;
     --pastel-red: #FBE4E4;
     
@@ -56,6 +56,17 @@ body.dark-mode {
     --accent: #54A3D6;       /* Mantenemos el azul Notion */
 }
 
+/* Soporte modo oscuro para el pliegue de las nuevas etiquetas flotantes */
+body.dark-mode .fab-btn {
+    --fold-color: #2b5473;
+}
+body.dark-mode #openNoteEditorBtn {
+    --fold-color: #245747;
+}
+body.dark-mode #openReminderSheetBtn {
+    --fold-color: #8c5120;
+}
+
 /* Ajustes específicos para que las tarjetas se vean bien en oscuro */
 body.dark-mode .reminder-card {
     background: #202020;
@@ -92,7 +103,7 @@ body {
    
     
    margin: 0;
-    font-family: 'Inter', sans-serif;
+   font-family: 'Nunito', sans-serif;
     background-color: var(--bg-app);
     color: var(--text-main);
     
@@ -108,7 +119,7 @@ body {
      width: 95%;
     max-width: 500px;
     margin: 0 auto;
-    padding: 20px 10px;
+    padding: 20px 0;
     
     /* CAMBIO CLAVE: El contenedor también debe intentar llenar el espacio */
     flex-grow: 1; 
@@ -162,7 +173,9 @@ h1, h2 {
 }
 
  
-
+h2{
+    margin-top: 50px;
+}
 
 
 
@@ -196,29 +209,76 @@ h1, h2 {
     mix-blend-mode: multiply;
 }
 
-.progress-container {
-    background: #F1F1F0;
-    height: 12px;
-    border-radius: 6px;
-    overflow: hidden;
-    margin: 20px 0;
+.progress-wrapper {
     position: relative;
+    margin: 0 0;
+    cursor: pointer;
+    padding-bottom: 12px; /* Damos espacio para que respire la línea indicadora */
+}
+
+.progress-container {
+    background: var(--border-soft);
+    height: 6px; /* Barra más fina y elegante */
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); /* Profundidad sutil */
+}
+
+/* Pequeña línea para indicar que es clickeable */
+.progress-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 12px; /* Ajustado por la nueva altura de la barra */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px; /* Un poco más pequeña */
+    height: 3px; /* Más fina */
+    background-color: #d1d1d1;
+    border-radius: 2px;
 }
 
 .progress-bar {
     height: 100%;
     background: var(--success);
     width: 0%;
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efecto de brillo animado en la barra */
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 #progressText {
-    display: block;
+    /* Oculto por defecto, se mostrará con JS */
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
     font-size: 12px;
     color: var(--text-sub);
-    margin-top: -10px;
-    margin-bottom: -10px;
+    margin-top: 0;
+    padding-top: 8px; /* Espacio cuando sea visible */
     font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease-out;
+}
+
+#progressText.visible {
+    max-height: 40px; /* Altura suficiente para el texto */
+    opacity: 1;
 }
 
 /* =========================================
@@ -299,20 +359,6 @@ button:active { transform: scale(0.96); }
 /* =========================================
    6. TARJETAS Y LISTAS
    ========================================= */
-.reminder-card {
-    background: var(--bg-app);
-    padding: 8px 12px; /* Mucho más fino */
-    margin-bottom: 6px; /* Espacio mínimo entre tareas */
-    border-radius: 10px;
-    border: 1px solid var(--border-soft);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: auto;
-    user-select: none;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    box-shadow: var(--shadow-light);
-}
 
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(-10px); }
@@ -333,15 +379,38 @@ button:active { transform: scale(0.96); }
 }
 
 /* Chips de Filtro y Categorías */
-.filter-container, .category-selector {
+.category-selector {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     padding: 5px 0 5px 0;
+    margin-top: 10px;
+    margin-bottom: 5px;
     scrollbar-width: none;
 }
 
-.filter-chip, .cat-chip {
+/* Convertimos .filter-container en una lista vertical colapsable */
+.filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    max-height: 0; /* Oculto por defecto */
+    overflow: hidden;
+    opacity: 0;
+    padding: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-container.expanded {
+    max-height: 500px; /* Suficiente para mostrar la lista */
+    opacity: 1;
+    padding: 5px 0;
+    overflow-y: auto;
+}
+
+.cat-chip {
     background: var(--bg-alt);
     border: 1px solid var(--border-soft);
     padding: 7px 14px;
@@ -350,6 +419,24 @@ button:active { transform: scale(0.96); }
     white-space: nowrap;
     cursor: pointer;
     color: var(--text-sub);
+}
+
+/* Adaptamos .filter-chip para la lista vertical */
+.filter-chip {
+    background: var(--bg-alt);
+    border: 1px solid var(--border-soft);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    color: var(--text-sub);
+    width: 100%;
+    transition: 0.2s;
 }
 
 .filter-chip.active, .cat-chip.selected {
@@ -398,14 +485,19 @@ button:active { transform: scale(0.96); }
     border-radius: 25px;
     padding: 2px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 40px; /* Ancho inicial (solo el botón) */
+    width: 0; /* Oculto completamente por defecto */
+    opacity: 0;
+    pointer-events: none;
     overflow: hidden;
     border: 1px solid transparent;
+    margin: 0;
 }
 
 /* Cuando está abierto, se expande hacia la izquierda del botón */
 .search-wrapper.expanded {
     width: 200px; /* Ajusta según cuánto quieras que crezca */
+    opacity: 1;
+    pointer-events: auto;
     border-color: var(--border-soft);
     padding: 2px 10px;
 }
@@ -460,14 +552,37 @@ button:active { transform: scale(0.96); }
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.2s;
+    position: relative;
+    width: 60px;
+    height: 56px;
+    border-radius: 28px;
+    justify-content: center;
+    transition: color 0.3s ease;
+    z-index: 1;
 }
 
-.nav-item.active {
-    color: var(--accent);
+.nav-item .nav-icon,
+.nav-item span {
+    position: relative;
+    z-index: 2; /* Garantiza que el icono y título queden por encima del fondo */
 }
 
-.nav-item span { margin-top: 4px; font-size: 18px; } /* Para los emojis del menú */
+.nav-item::before {
+    content: "";
+    position: absolute;
+    top: 20px; /* Posicionado exactamente detrás del icono */
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5); /* Inicia más pequeño para el rebote */
+    width: 36px; /* Tamaño ajustado para no invadir el título */
+    height: 36px;
+    border-radius: 18px; /* Círculo perfecto */
+    background-color: transparent;
+    z-index: 0; /* Colocado detrás, pero sin bugs de capas en móviles */
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Animación con rebote suave */
+}
+
+.nav-item span { margin-top: 4px; }
 
 /* =========================================
    8. MODALES Y EXTRAS
@@ -494,11 +609,44 @@ button:active { transform: scale(0.96); }
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+/* Estilo minimalista para el botón de reinicio */
 .btn-reset {
-    background: var(--pastel-red);
-    color: #C0392B;
-    border: 1px solid #E6B2B2;
-    margin-top: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: var(--pastel-red) !important; /* Rosa suave */
+    color: var(--error) !important; /* Rojo semántico */
+    padding: 10px 22px;
+    border-radius: 14px;
+    border: 1px solid rgba(235, 87, 87, 0.15);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    margin-top: 0 !important; /* Ajustamos el margen para que use el del contenedor */
+}
+
+/* Tamaño y color del icono SVG */
+.broom-icon-svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor; /* Usa el color del texto (var--error) */
+}
+
+/* Feedback al presionar */
+.btn-reset:active {
+    transform: scale(0.94);
+    background-color: #F8D7D7 !important; /* Un tono ligeramente más oscuro */
+    box-shadow: none;
+}
+
+/* Soporte para Modo Oscuro */
+body.dark-mode .btn-reset {
+    background-color: rgba(235, 87, 87, 0.1) !important;
+    border-color: rgba(235, 87, 87, 0.2);
+    color: #ff6b6b !important;
 }
 
 /* Animación de error */
@@ -553,6 +701,9 @@ button:active { transform: scale(0.96); }
 .category-stats {
     background: white;
     padding: 5px;
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+  
 }
 
 .category-stats h3 {
@@ -690,14 +841,14 @@ button:active { transform: scale(0.96); }
     display: none; /* Se activa con JS */
     justify-content: center;
     align-items: center;
-    z-index: 3000;
+    z-index: 10006;
 }
 
 .context-menu-overlay.active { display: flex; }
 
 .menu-content {
     background: var(--bg-app);
-    width: 250px;
+    width: 170px;
     border-radius: 16px;
     padding: 10px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -708,37 +859,76 @@ button:active { transform: scale(0.96); }
     from { transform: scale(0.9); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
-
-.menu-item {
+/* Contenedor circular suave para el icono */
+.menu-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 15px;
-    width: 100%;
-    border-radius: 10px;
-    border: none;
-    background: none;
-    color: var(--text-main);
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: left;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
-.menu-item:active { background-color: var(--bg-alt); }
-.menu-item.delete { color: var(--error); }
+.menu-icon-wrapper svg {
+    width: 20px;
+    height: 20px;
+}
 
-/* Restauramos la tarjeta simple */
+/* Paleta de colores Pastel (Usando tus variables de style.css) */
+.blue {background-color: #5d91c2; color: #32bdcf; }
+.green { background-color: #d8d8e9; color: #7979be; }
+.red { background-color: #dbd8079f; color: #fffb00; }
+.purple { background-color: #d8d8e9; color: #7979be; }
+.gray{ background-color: #d8d8e9; color: #7979be; }
+.orange { background-color: #d8d8e9; color: #7979be; }
+.yellow { background-color: #d8d8e9; color: #7979be; }
+.teal { background-color: #d8d8e9; color: #7979be; }
+.indigo { background-color: #d8d8e9; color: #7979be; }
+.pink { background-color: #bd636a; color: #d30a0a; }
+
+/* Ajuste del ítem del menú */
+.menu-item {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 500;
+    color: var(--text-main);
+    transition: background 0.2s;
+}
+
+/* Efecto cuando el ítem está activo */
+.menu-item.active {
+    background-color: rgba(0, 0, 0, 0.03);
+    color: var(--text-main);
+}
+
+.menu-item.active .menu-icon-wrapper {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Modo Oscuro: Suavizamos los colores para que no brillen demasiado */
+body.dark-mode .menu-icon-wrapper {
+    opacity: 0.8;
+}
+
+/* Diseño de tarjeta estilo Nube */
 .reminder-card {
-    background: var( --bg-card);
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid var(--border-soft);
-    margin-bottom: 12px;
+    background: var(--bg-card);
+    padding: 14px 12px; /* Un poco más de espacio interior para estilo nube */
+    border-radius: 20px;
+    border: none;
+    margin-bottom: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     user-select: none; /* Evita que se seleccione el texto al dejar presionado */
+    position: relative;
+    z-index: 2;
+    transition: transform 0.3s ease, background-color 0.2s ease;
 }
 /* =========================================
    ANIMACIONES DE INTERACCIÓN (Feedback)
@@ -752,18 +942,8 @@ button:active { transform: scale(0.96); }
     transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-/* 2. Animación de salida al eliminar */
-.reminder-card.removing {
-    transform: translateX(-100%);
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 /* Aseguramos que la tarjeta normal tenga transición para que el regreso sea suave */
-.reminder-card {
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    user-select: none; /* Evita que el sistema seleccione texto al presionar largo */
-}
+
 
 
 
@@ -779,24 +959,7 @@ button:active { transform: scale(0.96); }
     transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-/* Animación de salida hacia la izquierda al eliminar */
-.reminder-card.removing {
-    transform: translateX(-100%);
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-/* Suavizamos la transición general de la tarjeta */
-.reminder-card {
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    user-select: none; 
-}
-
-/* =========================================
-   TOAST CIRCULAR "COPIADO"
-/* =========================================
-   TOAST CIRCULAR "COPIADO" (Parte Inferior)
-   ========================================= */
 .copy-toast {
     position: fixed;
     bottom: 100px; /* Ubicación en la parte de abajo */
@@ -833,24 +996,159 @@ button:active { transform: scale(0.96); }
 /* =========================================
    ESTILO DE NOTAS MINIMALISTAS
    ========================================= */
+@keyframes noteAppear {
+    from { opacity: 0; transform: translateY(15px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .note-card {
     background-color: var(--pastel-yellow); /* Color cremita suave */
-    padding: 18px;
-    border-radius: 14px;
-    border: 1px solid #F3E5BC;
-    margin-bottom: 15px;
+    padding: 16px;
+    border-radius: 20px;
+    border: none;
+    margin-bottom: 5px;
     line-height: 1.5;
     font-size: 15px;
     color: #444;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     white-space: pre-wrap; /* Mantiene los saltos de línea */
     position: relative;
+    animation: noteAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* =========================================
+   CÍRCULOS DE PERFIL (Estilo Gmail)
+   ========================================= */
+.task-profile-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    box-shadow: inset 0 -2px 5px rgba(0,0,0,0.08); /* Pequeño relieve suave */
+}
+
+/* =========================================
+   CARRUSEL DE CATEGORÍAS DE NOTAS (OneUI / Status Style)
+   ========================================= */
+.notes-category-carousel {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px 5px 20px 5px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.notes-category-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.note-category-card {
+    flex: 0 0 auto;
+    width: 85px; /* ANTES: 72px - AHORA MÁS LARGAS */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.note-category-icon-wrapper {
+    width: 76px;
+    height: 110px; /* Estilo vertical de estados de WhatsApp */
+    border-radius: 16px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--cat-color, var(--accent)) 12%, var(--bg-card)), var(--bg-card));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px; /* Letra un poco más grande para llenar el espacio */
+    font-weight: 700;
+    color: var(--cat-color, var(--accent)); /* Toma el color dinámico, por defecto azul */
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s;
+    border: 1.5px solid transparent;
+}
+
+.note-category-card:active .note-category-icon-wrapper {
+    transform: scale(0.92);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.note-category-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.note-category-card.has-notes .note-category-icon-wrapper {
+    border-color: var(--cat-color, var(--accent)); /* Borde dinámico según el color */
+    padding: 3px;
+    background-clip: content-box;
+}
+
+.note-category-card.add-new .note-category-icon-wrapper {
+    background: transparent;
+    border: 2px solid var(--border-soft); /* Sin bordes rayados, suave OneUI */
+    color: var(--text-sub);
+    font-size: 24px;
+    box-shadow: none;
+}
+body.dark-mode .note-category-card.add-new .note-category-icon-wrapper {
+    border-color: #373737;
+}
+
+/* =========================================
+   NUEVO SISTEMA DE SELECCIÓN MÚLTIPLE
+   ========================================= */
+.multi-select-bar {
+    position: fixed;
+    bottom: -100px; /* Oculto por defecto */
+    left: 0; right: 0;
+    height: 75px;
+    background: var(--bg-app);
+    border-top: 1px solid var(--border-soft);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10010; /* Por encima de todo, incluso el menú principal */
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.multi-select-bar.active {
+    bottom: 0; /* Sustituye visualmente al menú de navegación normal */
+}
+.ms-btn {
+    background: none; border: none;
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 12px; color: var(--text-main); font-weight: 600;
+    cursor: pointer; transition: transform 0.1s;
+}
+.ms-btn:active { transform: scale(0.9); }
+.ms-btn span { font-size: 22px; margin-bottom: 2px; }
+.ms-btn.delete { color: var(--error); }
+
+.reminder-card.selected {
+    border-color: var(--accent);
+    background-color: var(--pastel-blue) !important;
+    transform: scale(0.98);
+    box-shadow: 0 0 0 2px var(--accent);
+}
+.pin-indicator { font-size: 14px; margin-right: 6px; }
 
 /* Ajuste para modo oscuro */
 body.dark-mode .note-card {
     background-color: #2D2A24;
-    border-color: #3F3A2B;
     color: #D1D1D1;
 }
 
@@ -858,28 +1156,90 @@ body.dark-mode .note-card {
    ESTILO NOTAS PRO (Samsung/Keep Style)
    ========================================= */
 
-/* Botón Flotante Circular (FAB) */
+/* Botón Flotante Circular (FAB) -> Ahora Etiqueta Lateral Derecha */
 .fab-btn {
     position: fixed; /* Se pega a la ventana del celular */
-    bottom: 100px;   /* Distancia desde el fondo */
-    left: 84%;
-    transform: translateX(-50%); /* Centrado horizontal perfecto */
+    bottom: 90px;    /* Misma altura que alarma */
+    right: -10px;    /* Pegado al borde derecho, sobresaliendo un poco */
+    left: auto;
+    transform: none; /* Quitamos el centrado horizontal */
     
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: var(--pastel-yellow);
-    color: #d6a511;
-    font-size: 32px;
+    width: 70px;
+    height: 48px;    /* Altura más plana como etiqueta */
+    border-radius: 20px 0 0 20px; /* Curvo a la izquierda, recto a la derecha */
+    background: var(--accent); /* Color azul */
+    --fold-color: #3b749b; /* Color de pliegue 3D azul por defecto */
+    border: none;
+    color: #ffffff;
+    font-size: 20px; /* Tamaño del icono ajustado */
+    box-shadow: none; /* Sin sombreado, totalmente plano */
     
     display: none; /* Empezamos ocultos, el JS lo activará */
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* Todo alineado a la izquierda del botón */
+    padding: 0;
+    overflow: visible; /* Permitir ver el pliegue del pseudo-elemento */
     
-    z-index: 9999; /* Por encima de absolutamente todo */
-    border: 1px solid #d6a511;
+    z-index: 9990; /* Por encima de absolutamente todo */
+  
     
     cursor: pointer;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+    transform-origin: right center; /* Crece y se encoge anclado a la derecha */
+}
+
+/* Pliegue inferior para el efecto 3D estilo etiqueta */
+.fab-btn::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 8px solid var(--fold-color);
+    border-right: 10px solid transparent;
+    z-index: -1;
+}
+
+.fab-btn:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}
+
+.fab-btn.auto-expanded {
+    width: 195px; /* Más largo hacia la izquierda para que el texto y el icono respiren */
+}
+
+.fab-icon {
+    width: 56px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-right: 10px; /* Compensar los 10px que sobresalen a la derecha */
+}
+
+.fab-text {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.3s, transform 0.4s;
+    
+    /* Ocultamiento local ya que quitamos overflow:hidden al botón principal */
+    max-width: 0;
+    overflow: hidden;
+}
+
+.fab-btn.auto-expanded .fab-text {
+    opacity: 1;
+    transform: translateX(0);
+    padding-right: 25px; /* Más separación del borde derecho de la pantalla */
+    max-width: 150px;
 }
 /* Botón de texto simple para cancelar/volver */
 .btn-text {
@@ -901,7 +1261,7 @@ body.dark-mode .note-card {
     flex: 1; /* Esto obliga al contenedor a estirarse y llenar la pantalla */
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    padding: 15px 15px 40vh 15px; /* 40vh aseguran un colchón perfecto para el teclado virtual */
 }
 
 
@@ -926,10 +1286,11 @@ body.dark-mode .note-card {
 }
 
 #noteInput {
-    flex: 1; /* El área de texto ocupa todo el espacio restante */
+    min-height: 50vh; /* Toma buen espacio al inicio */
     width: 100%; border: none; background: transparent;
     font-size: 16px; resize: none; outline: none;
     color: var(--text-main);
+    overflow: hidden; /* Oculta el scroll interno del textarea */
 }
 
 
@@ -945,9 +1306,41 @@ body.dark-mode .note-card {
     font-size: 14px;
     font-weight: 700;
     color: var(--text-sub);
-    margin: 20px 0 10px 5px;
+    margin: 5px 0 5px 5px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Botón para cambiar entre vista "Hoy" y "Todas" integrado en los días */
+.task-view-toggle {
+    position: absolute;
+    left: -15px; /* Pegado a la izquierda del contenedor */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: #8ac5e5; /* Azul más claro que el principal */
+    color: #ffffff;
+    border: none;
+    border-radius: 0 12px 12px 0; /* Mantiene la proporción en un tamaño menor */
+    padding: 3px 2px 3px 4px; /* Relleno lateral al mínimo para acortar el largo */
+    font-size: 8px; /* Letra un punto más pequeña para que encaje */
+    font-weight: 800;
+    letter-spacing: -0.2px; /* Juntamos las letras ligeramente */
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: none; /* Sin ningún sombreado */
+    transition: transform 0.2s ease, filter 0.2s;
+    flex: 0 0 auto;
+    height: 30px;
+    width: 46px; /* Ancho fijo forzado a la mitad para que no sobresalga */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-view-toggle:active { 
+    transform: translateY(-50%) scale(0.95); 
+    filter: brightness(0.9);
 }
 
 /* Texto de tarea más pequeño y truncado */
@@ -985,19 +1378,41 @@ body.dark-mode .note-card {
     transform: translateY(100%);
     
    height: 60vh;
-    max-height: 85vh; /* Puede crecer hasta casi pantalla completa */
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s ease;
+    max-height: 100vh; /* Ahora puede usar el 100% en modo expandido */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s ease, border-radius 0.3s;
+    overflow-y: auto; /* Permite el scroll interno natural cuando el texto crece */
+    display: flex;
+    flex-direction: column;
+}
+body.keyboard-open .bottom-sheet .sheet-content {
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    padding-bottom: 0px; 
+}
+body.keyboard-open #bottomTaskOptions {
+    bottom: 0 !important;
+    padding-bottom: 10px !important;
 }
 .bottom-sheet.full-height .sheet-content {
-    height: 90vh;
+    height: 100vh;
+    border-radius: 0; /* Quita los bordes redondeados al usar la pantalla completa */
+    padding-bottom: 20px; /* Da margen para que el teclado virtual no tape el texto final */
 }
 #openTaskSheetBtn {
-    left:80%; /* Anulamos el centrado anterior si prefieres que esté a la derecha */
-    transform: none;
-    background: #54A3D6;
-    border: 1px solid #54A3D6;
-    color: #f7f2f2;
-    box-shadow: 0 2px 8px rgb(61, 60, 60);
+    /* Eliminamos las reglas sobreescritas para que use las de .fab-btn unificadas */
+}
+
+/* Color distintivo para el botón de Notas */
+#openNoteEditorBtn {
+    background: var(--success) !important;
+    --fold-color: #318260;
+}
+
+/* Color distintivo para el botón de Alarmas */
+#openReminderSheetBtn {
+    background: #F2994A !important;
+    --fold-color: #b96d2d;
 }
 
 
@@ -1020,26 +1435,91 @@ visibility: visible;
     width: 100%; border: none; background: transparent;
     font-size: 16px; font-family: inherit; resize: none; outline: none;
     line-height: 1.6; color: var(--text-main);
+    overflow: hidden; /* Oculta su propio scroll; la responsabilidad pasa a .sheet-content */
 }
 
-/* Botón de guardar en el panel inferior */
+/* Rediseño del botón de guardado (Manteniendo la clase original) */
 .btn-save-task {
-    background: rgb(207, 212, 207);
-    color: rgb(138, 133, 133);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    background-color: var(--accent) !important; /* Azul claro / Notion */
+    color: #ffffff !important; /* Blanco puro para el icono */
+    width: 56px; /* Más ancho para ser ovalado */
+    height: 40px; /* Un poco menos alto */
+    border-radius: 20px; /* Forma ovalada tipo píldora */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    
+    border: none;
+    box-shadow: none; /* Diseño plano y limpio sin sombras */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
+/* Icono SVG estilizado */
+.save-task-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+/* Feedback al presionar */
 .btn-save-task:active {
-    transform: scale(0.9);
+    transform: scale(0.95);
+    background-color: #3b8cc4 !important; /* Azul un poco más oscuro al presionar */
+    box-shadow: none;
+}
+
+/* =========================================
+   PANELES DE OPCIONES DE TAREA (CHIPS)
+   ========================================= */
+.custom-options-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--bg-alt);
+    border-radius: 16px;
+    border: 1px solid var(--border-soft);
+    animation: fadeIn 0.2s ease-out;
+    max-height: 160px;
+    overflow-y: auto;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.custom-option-chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+.custom-option-chip:active {
+    transform: scale(0.95);
+}
+.custom-option-chip.selected {
+    background: var(--pastel-blue);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+}
+.custom-option-chip svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Ajuste para que el label de categoría no se pegue */
+#sheetCategoryLabel {
+    color: var(--text-sub);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 .empty-state {
     text-align: center;
@@ -1160,28 +1640,55 @@ visibility: visible;
 
 .calendar-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 15px; padding: 0 10px;
+    margin-bottom: 20px; padding: 0 5px;
 }
+.calendar-header button {
+    background: transparent; color: var(--text-sub); border: none;
+    font-size: 20px; font-weight: bold; padding: 10px; box-shadow: none;
+}
+.calendar-header button:active { transform: scale(0.9); }
+.calendar-header h3 {
+    font-size: 20px; font-weight: 700; color: var(--text-main); margin: 0;
+}
+
+.calendar-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    text-align: center; font-size: 13px; font-weight: 600;
+    color: var(--text-sub); margin-bottom: 10px;
+}
+.calendar-weekdays span:first-child { color: var(--error); }
+
 .calendar-grid {
     display: grid; grid-template-columns: repeat(7, 1fr);
-    gap: 8px; background: var(--bg-alt);
-    padding: 15px; border-radius: var(--radius);
-    margin-bottom: 20px;
+    gap: 4px; background: transparent;
+    padding: 0; margin-bottom: 20px;
 }
+
 .calendar-day {
-    aspect-ratio: 1; display: flex; align-items: center;
-    justify-content: center; font-size: 14px;
-    border-radius: 8px; cursor: pointer; transition: 0.2s;
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; font-size: 16px; font-weight: 500; color: var(--text-main);
+    border-radius: 50%; cursor: pointer; transition: 0.2s; position: relative;
+    width: 40px; height: 40px; margin: 0 auto;
 }
-.calendar-day:active { background: var(--pastel-blue); }
-.calendar-day.active { background: var(--accent); color: white; font-weight: bold; }
-.calendar-day.has-tasks { border-bottom: 3px solid var(--success); }
+.calendar-day.empty { pointer-events: none; }
+.calendar-day:active { background: var(--bg-alt); }
+
+.calendar-day.active { background: var(--pastel-blue); color: var(--accent); font-weight: 700; }
+.calendar-day.today { background: var(--accent) !important; color: white !important; font-weight: 700; }
+.calendar-day.today.active { box-shadow: 0 0 0 2px var(--bg-app), 0 0 0 3px var(--accent); }
+
+.calendar-day.has-tasks::after {
+    content: ''; position: absolute; bottom: 4px;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--success);
+}
+.calendar-day.today.has-tasks::after { background: white; }
 .samsung-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 20px 15px 10px 15px; /* Ajustamos padding lateral */
+    
     box-sizing: border-box; /* */
 }
 
@@ -1269,16 +1776,27 @@ visibility: visible;
     color: var(--text-sub); /* */
 }
 
-/* Color cuando SÍ está seleccionado (azul Notion) */
-.nav-item.active {
-    color: var(--accent); /* */
+/* --- Estilo de Tab Activa Dinámico y Pequeño --- */
+.nav-item.active::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
 }
 
-/* Efecto cuando el botón está activo */
-.nav-item.active .nav-icon {
-    stroke: var(--accent); /* Cambia al azul de Notion/Samsung */
-    stroke-width: 2.0;      /* Un poco más grueso para resaltar el estado activo */
+/* 1. Hoy (Azul original limpio) */
+.nav-item[data-view="view-today"].active { color: var(--accent); }
+/* 2. Alarmas (Naranja cálido) */
+.nav-item[data-view="view-reminders"].active { color: #F2994A; }
+/* 3. Notas (Verde esmeralda) */
+.nav-item[data-view="view-notes"].active { color: var(--success); }
+/* 4. Perfil (Morado moderno) */
+.nav-item[data-view="view-profile"].active { color: #9B5DE5; }
+
+.nav-item.active::before {
+    background-color: currentColor; /* El fondo toma el color activo de la pestaña */
 }
+
+.nav-item.active .nav-icon { color: #ffffff; } /* Ícono blanco para contrastar con la burbuja */
+.nav-item.active span { font-weight: 700; } /* El texto hereda el color vivo, pero queda fuera de la burbuja */
 
 .nav-item:active .nav-icon {
     transform: scale(0.9);
@@ -1290,15 +1808,15 @@ visibility: visible;
     align-items: center;
     justify-content: center;
 }
-#view-notes-editor,#view-calendar{
+#view-notes-editor,#view-calendar,#view-organize,#view-history,#view-category-notes{
     position: fixed; /* Se queda quieto respecto a la pantalla */
     top: 0;
     left: 0;
     width: 100vw;     /* Ocupa el 100% del ancho */
     height: 100vh;    /* Ocupa el 100% del alto */
     background-color: var(--bg-app); /* Fondo sólido para tapar lo de atrás */
-    z-index: 9999;    /* El número más alto para que esté sobre el menú y el nav */
-    padding: 20px;
+    z-index: 9980;    /* El número más alto para que esté sobre el menú y el nav */
+    padding: 5px;
     box-sizing: border-box;
     display: none;    /* Oculto por defecto */
     flex-direction: column;
@@ -1306,8 +1824,82 @@ visibility: visible;
 }
 
 /* Cuando el editor esté activo, lo mostramos con flex */
-#view-notes-editor.active ,#view-calendar.active {
+#view-notes-editor.active ,#view-calendar.active,#view-organize.active,#view-history.active,#view-category-notes.active {
     display: flex !important;
+}
+
+/* =========================================
+   OPCIONES DE TAREA Y COMPARTIR
+   ========================================= */
+.task-options-toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 15px 0;
+}
+
+.toolbar-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn {
+    background: var(--bg-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    color: var(--text-main);
+}
+
+.icon-btn:active {
+    transform: scale(0.9);
+    background: var(--border-soft);
+}
+
+.icon-btn.active {
+    background: var(--pastel-blue);
+    border-color: var(--accent);
+}
+
+.hidden-input-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* NIVELES DE IMPORTANCIA */
+.reminder-card.importance-high { border-left: 6px solid #F2C94C !important; }
+.reminder-card.importance-medium { border-left: 6px solid #54A3D6 !important; }
+.reminder-card.importance-low { border-left: 6px solid #EB5757 !important; }
+.reminder-card.importance-none { border-left: 6px solid #9B9A97 !important; }
+
+.badge-alarm {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--pastel-blue);
+    padding: 2px 6px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 4px;
 }
 .reminder-item {
     background: var(--bg-alt);
@@ -1381,4 +1973,1543 @@ visibility: visible;
     gap: 6px;
     flex-wrap: wrap; /* Por si el espacio es poco en el móvil */
 }
+/* Feedback visual al presionar un chip */
+.filter-chip:active {
+    transform: scale(0.95);
+    background-color: var(--pastel-red); /* Color de advertencia suave */
+    transition: transform 0.1s;
+}
+/* Animación de fondo relajante */
+.focus-bg-animation {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(45deg, #1e293b, #334155, #1e293b);
+    background-size: 400% 400%;
+    animation: gradientRespiration 15s ease infinite;
+    z-index: -1;
+}
 
+@keyframes gradientRespiration {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+#view-focus .focus-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    height: 100%;
+    color: white;
+    text-align: center;
+}
+
+.timer-display h1 {
+    font-size: 80px;
+    font-weight: 200;
+    margin: 0;
+    color: white;
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+
+.btn-zen {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 15px 40px;
+    border-radius: 30px;
+    font-size: 18px;
+}
+.focus-view {
+    background:url(../assets/FONDO3.jpg);
+    background-size: cover;
+    background-position: center;
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 9999;
+    padding-top: 20px;
+    transition: background-image 0.5s ease-in-out;
+}
+
+.zen-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+}
+
+.zen-container {
+    position: relative;
+    z-index: 10155;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+/* Ubicar la 'X' para cerrar la vista Focus */
+.close-zen {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Botón para cambiar el fondo */
+.change-bg-zen {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    transition: transform 0.2s;
+}
+.change-bg-zen:active { transform: scale(0.9); }
+
+/* Reloj Circular */
+.zen-timer-wrapper {
+    position: relative;
+    width: 280px;
+    height: 280px;
+}
+
+.timer-svg { transform: rotate(-90deg); }
+.timer-bg { 
+    fill: none; 
+    stroke: rgba(255,255,255,0.15); 
+    stroke-width: 5; 
+}
+.timer-bar {
+    fill: none;
+    stroke: #64B5F6; /* Color azul claro */
+    stroke-width: 5; /* Barra ligeramente más gruesa */
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+}
+
+.timer-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.timer-text h1 { font-size: 64px; font-weight: 200; margin: 0; color: white !important; }
+.timer-text p { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; }
+
+.btn-zen-start {
+    margin-top: 40px;
+    background: white;
+    color: black;
+    padding: 18px 60px;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* =========================================
+   VISOR DE IMÁGENES PANTALLA COMPLETA
+   ========================================= */
+.image-viewer-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10010; /* Encima de toda la app */
+    display: none; /* Controlado por JS */
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.image-viewer-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+.image-viewer-overlay img {
+    max-width: 95%; max-height: 95%;
+    object-fit: contain; border-radius: 8px;
+    transform: scale(0.9); transition: transform 0.3s ease;
+}
+.image-viewer-overlay.active img {
+    transform: scale(1);
+}
+.close-image-btn {
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(255, 255, 255, 0.2); border: none;
+    color: white; font-size: 24px; width: 40px; height: 40px;
+    border-radius: 50%; cursor: pointer; display: flex;
+    justify-content: center; align-items: center; z-index: 10011;
+}
+
+.canvas-wrapper {
+    background: #ffffff !important; /* Fondo como hoja de papel blanca siempre */
+    border-radius: 8px; /* Bordes idénticos a los inputs */
+    border: 1px solid var(--border-soft); /* Borde sólido, limpio y elegante */
+    margin-top: 10px; /* Pequeño espacio organizado respecto al texto */
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05); /* Efecto hundido igual que el textarea */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Organiza la barra de herramientas arriba y el lienzo abajo */
+    flex: 1; /* Para que ocupe todo el espacio sobrante cuando el texto se oculta */
+}
+
+#noteCanvas {
+    width: 100%;
+    height: 100%; /* Toma todo el alto que le deja el wrapper */
+    flex: 1;
+    touch-action: none; /* CRÍTICO: Evita que el celular haga scroll mientras dibujas */
+}
+
+.canvas-tools {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border-soft);
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.canvas-tools button {
+    width: 32px; 
+    height: 32px; 
+    border-radius: 50%; 
+    border: 2px solid var(--border-soft);
+    background: white;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.canvas-tools button:active {
+    transform: scale(0.9);
+}
+
+.canvas-tools button.active {
+    border-color: var(--accent);
+    transform: scale(1.15);
+    box-shadow: 0 4px 8px rgba(84, 163, 214, 0.3);
+}
+
+.tool-divider {
+    width: 2px;
+    height: 20px;
+    background: var(--border-soft);
+    margin: 0 4px;
+    border-radius: 2px;
+}
+
+
+
+
+/* =========================================
+   BOTÓN DINÁMICO RECORDATORIOS (ALARMAS)
+   ========================================= */
+.dynamic-reminder-bar {
+    position: fixed;
+    bottom: 90px;
+    right: -10px;
+    left: auto;
+    transform: none;
+    width: 56px;
+    max-height: 56px;
+    background: #F2994A;
+    border-radius: 24px 0 0 24px;
+    box-shadow: none;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: visible;
+    z-index: 9990;
+    border: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.dynamic-reminder-bar.auto-expanded {
+    width: 230px; 
+}
+
+.dynamic-reminder-bar.expanded {
+    width: calc(100% - 40px);
+    max-width: 400px;
+    max-height: 200px;
+    border-radius: 16px;
+    background: var(--bg-alt);
+    border: 1px solid #F2994A;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Ajuste vital: Sube la ventana cuando el usuario escribe para evitar al teclado superpuesto */
+.dynamic-reminder-bar.expanded.typing-mode {
+    transform: translate(-50%, -310px) !important;
+}
+
+.rem-expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+}
+
+.rem-btn-icon { 
+    width: 56px; 
+    height: 48px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 20px; 
+    flex-shrink: 0; 
+    padding-right: 10px; 
+}
+.rem-btn-text { color: white; font-weight: 600; font-size: 15px; white-space: nowrap; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.4s; }
+.dynamic-reminder-bar.auto-expanded .rem-btn-text { opacity: 1; transform: translateX(0); padding-right: 25px; } /* Compensa el texto pegado al borde */
+
+.rem-expanded-area {
+    display: none; 
+    flex-direction: column;
+    padding: 15px;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+}
+.dynamic-reminder-bar.expanded .rem-expanded-area { display: flex; }
+.dynamic-reminder-bar.expanded .rem-expand-btn { display: none; }
+
+.rem-presets {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.rem-presets::-webkit-scrollbar {
+    display: none;
+}
+.rem-preset-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    color: var(--text-sub);
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+.rem-preset-btn:active {
+    transform: scale(0.9);
+    background: var(--pastel-orange);
+    color: #D9730D;
+    border-color: #F2994A;
+}
+
+/* =========================================
+   SAMSUNG ALARM STYLE TIME PICKER
+   ========================================= */
+.stp-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; align-items: flex-end;
+    z-index: 10040; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s;
+}
+.stp-overlay.active { opacity: 1; }
+
+.stp-sheet {
+    background: var(--bg-app); width: 100%; border-radius: 24px 24px 0 0;
+    padding: 25px 20px 40px; box-shadow: 0 -4px 25px rgba(0,0,0,0.15);
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   
+}
+.stp-overlay.active .stp-sheet { transform: translateY(0); }
+
+.stp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.stp-header button { background: none; border: none; font-size: 16px; color: var(--text-sub); padding: 5px 10px; cursor: pointer; }
+.stp-header .stp-save { background: var(--accent); color: white; font-weight: 600; padding: 8px 20px; border-radius: 20px; }
+.stp-header .stp-save:active { transform: scale(0.95); }
+
+.stp-wheels-container {
+    position: relative; display: flex; justify-content: center; align-items: center;
+    height: 150px; background: var(--bg-alt); border-radius: 20px;
+    border: 1px solid var(--border-soft); overflow: hidden;
+}
+
+.stp-highlight {
+    position: absolute; top: 50px; left: 10px; right: 10px; height: 50px;
+    background: rgba(84, 163, 214, 0.1); border-radius: 12px; pointer-events: none;
+}
+
+.stp-wheel {
+    flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+    scrollbar-width: none; text-align: center; position: relative; z-index: 2;
+}
+.stp-wheel::-webkit-scrollbar { display: none; }
+
+.stp-pad { height: 50px; }
+
+.stp-item {
+    height: 50px; line-height: 50px; font-size: 22px; color: var(--text-sub);
+    scroll-snap-align: center; font-weight: 500; transition: all 0.2s; cursor: pointer;
+}
+
+
+/* =========================================
+   FUNCIONALIDAD DE DESLIZAR (SWIPE)
+   ========================================= */
+.swipe-container {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 5px;
+    border: none;
+    background-color: transparent; 
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    animation: noteAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.swipe-action {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    height: calc(100% - 4px);
+    width: 85px;
+    border-radius: 18px;
+    background-color: var(--error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    z-index: 1; /* Esto asegura que esté DETRÁS de la tarjeta */
+}
+
+.swipe-action .delete-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.swipe-action .delete-icon span {
+    font-size: 22px !important;
+    color: white !important;
+}
+
+.drag-indicator {
+    color: var(--text-sub);
+    opacity: 0.35; /* Muy sutil */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reminder-card.is-dragging {
+    transition: none;
+}
+
+.swipe-container.removing {
+    transition: all 0.3s ease-out;
+    transform: translateX(-100%);
+    opacity: 0;
+    max-height: 0;
+}
+/* =========================================
+   VISTA DE SEMANA (Week View) - Estilo Samsung
+   ========================================= */
+.week-view-container {
+    display: flex;
+    gap: 4px; /* Menos espacio para un look más compacto */
+    overflow-x: auto;
+    padding: 2px 0 8px 0; /* Padding superior reducido para acercarlo a la barra */
+    margin-bottom: 10px; /* Reducido para ahorrar espacio */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    position: relative; /* Asegura que el sticky funcione bien */
+}
+.week-view-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+.week-day {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    border-radius: 16px; /* Más redondeado, estilo One UI */
+    text-align: center;
+    cursor: pointer;
+    background: transparent; /* Fondo transparente para días no activos */
+    border: none; /* Sin bordes para un look más limpio */
+    transition: all 0.25s ease;
+    min-width: 58px;
+}
+
+.week-day:active {
+    transform: scale(0.95);
+    background: var(--pastel-blue); /* Animación de fondo al presionar */
+}
+/* Estado ACTIVO: El día que estamos viendo */
+.week-day.active {
+    background: transparent; /* El contenedor ya no tiene fondo */
+    box-shadow: none; /* Eliminamos la sombra */
+}
+.week-day.active .day-name {
+    background: var(--accent); /* El fondo azul se aplica solo al nombre del día */
+    color: white; /* El texto del nombre se vuelve blanco */
+    transform: scale(1.05); /* Animación sutil de "pop" al seleccionar */
+}
+/* Estado HOY: Un indicador sutil para el día actual */
+.week-day.today .day-name {
+    font-weight: 600; /* Mantenemos el peso normal, el círculo ya lo destaca */
+}
+.week-day.today .day-number {
+    background: var(--pastel-blue);
+    color: var(--accent);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    line-height: 28px; /* Centra el número verticalmente */
+    margin: 0 auto; /* Centra el círculo horizontalmente */
+}
+/* Si HOY está ACTIVO, el estilo de activo predomina, pero el nombre del día se mantiene fuerte */
+.week-day.today.active .day-name {
+    color: white;
+    opacity: 0.9;
+}
+.week-day.today.active .day-number {
+    background: transparent; /* Anulamos el círculo de "Hoy" cuando está activo */
+    color: var(--text-main); /* Devolvemos el color normal del número */
+}
+.day-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: none; /* Quitamos mayúsculas para un look más suave */
+    margin-bottom: 6px;
+    transition: all 0.25s ease; /* Transición para todos los cambios (color, fondo, transform) */
+    /* Añadimos padding y radio para crear el efecto píldora */
+    padding: 5px 14px; /* Hacemos el fondo un poco más grande */
+    border-radius: 6px;  /* Reducimos el radio para un look más rectangular */
+}
+.day-number {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    transition: all 0.25s ease; /* Transición también para el número */
+}
+.completion-toast {
+    position: fixed;
+    top: 40px; /* Aparece desde arriba */
+    left: 50%;
+    transform: translate(-50%, -100px); /* Empieza fuera de la pantalla arriba */
+    background-color: var(--success); /* Verde de éxito */
+    color: white;
+    padding: 12px 25px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    z-index: 4000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Animación con rebote */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.completion-toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0); /* Se desliza a su posición */
+}
+
+.completion-toast span {
+    font-size: 20px;
+}
+
+/* =========================================
+   TABS ALARMAS
+   ========================================= */
+.action-btn.active-tab {
+    background: var(--pastel-blue) !important;
+    border-radius: 12px !important;
+}
+.action-btn.active-tab svg {
+    stroke: var(--accent) !important;
+}
+
+/* =========================================
+   DISEÑO DE ALARMAS Y HÁBITOS
+   ========================================= */
+.alarm-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    margin-bottom: 0;
+}
+.alarm-card.disabled {
+    opacity: 0.55;
+}
+.alarm-card.disabled .alarm-time {
+    color: var(--text-sub);
+}
+.alarm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.alarm-time {
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--text-main);
+    letter-spacing: -1.5px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1;
+}
+.alarm-ampm {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-sub);
+    letter-spacing: 0;
+}
+.alarm-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Ajuste Rapid Card */
+.rapid-card {
+    padding: 20px;
+    border-radius: 18px;
+}
+
+/* =========================================
+   HABIT CARDS (Frecuentes)
+   ========================================= */
+.habit-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    gap: 15px;
+    margin-bottom: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-soft);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    animation: noteAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    align-items: center; /* Centrado vertical */
+}
+.habit-card:active {
+    transform: scale(0.96);
+}
+.habit-card.active {
+    border-color: transparent; /* El borde se quita en todos los activos */
+}
+
+/* --- COLORES DINÁMICOS PARA HÁBITOS ACTIVOS --- */
+.habit-card.active.habit-color-default {
+    background: linear-gradient(135deg, var(--accent) 0%, #3b8cc4 100%);
+    box-shadow: 0 8px 20px rgba(84, 163, 214, 0.35);
+}
+.habit-card.active.habit-color-blue {
+    background: linear-gradient(135deg, #4A90E2 0%, #2C6EAF 100%);
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.35);
+}
+.habit-card.active.habit-color-darkblue {
+    background: linear-gradient(135deg, #3D5A80 0%, #293241 100%);
+    box-shadow: 0 8px 20px rgba(61, 90, 128, 0.35);
+}
+.habit-card.active.habit-color-yellow {
+    background: linear-gradient(135deg, #F2C94C 0%, #EE964B 100%);
+    box-shadow: 0 8px 20px rgba(242, 201, 76, 0.35);
+}
+.habit-card.active.habit-color-purple {
+    background: linear-gradient(135deg, #9B5DE5 0%, #6A4C93 100%);
+    box-shadow: 0 8px 20px rgba(155, 93, 229, 0.35);
+}
+.habit-card.active.habit-color-green {
+    background: linear-gradient(135deg, #52BD94 0%, #2D6A4F 100%);
+    box-shadow: 0 8px 20px rgba(82, 189, 148, 0.35);
+}
+.habit-card.active .habit-title {
+    color: #ffffff;
+}
+.habit-card.active .habit-time {
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.habit-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    background: var(--bg-alt);
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Transición con rebote para efecto de salto */
+}
+.habit-card.active .habit-icon-wrapper {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.habit-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.habit-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.habit-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.3px;
+}
+.habit-time {
+    font-size: 12px;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-soft);
+    transition: all 0.2s;
+}
+.habit-card.active .habit-time {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    border-color: transparent;
+}
+.habit-time:active {
+    transform: scale(0.9);
+}
+.habit-days {
+    display: flex;
+    gap: 5px;
+}
+.habit-day {
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background: var(--bg-alt);
+    color: var(--text-sub);
+    font-weight: 700;
+    transition: all 0.2s;
+}
+.habit-day.active {
+    background: var(--accent);
+    color: white;
+}
+.habit-card.active .habit-day {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+.habit-card.active .habit-day.active {
+    background: #ffffff;
+    color: var(--accent);
+}
+.habit-day:active {
+    transform: scale(0.85);
+}
+
+/* Interruptor Moderno (Toggle) */
+.modern-toggle {
+    width: 48px;
+    height: 28px;
+    background: var(--border-soft);
+    border-radius: 15px;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+}
+.modern-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.habit-card.active .modern-toggle {
+    background: rgba(255, 255, 255, 0.3);
+}
+.habit-card.active .modern-toggle::after {
+    transform: translateX(20px);
+}
+
+/* =========================================
+   MENÚ DE OPCIONES DEL HEADER (TRES PUNTOS)
+   ========================================= */
+.samsung-header {
+    position: relative;
+}
+
+.header-menu-dropdown {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 180px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    padding: 10px;
+    z-index: 1010;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.header-menu-dropdown.active {
+    display: flex;
+}
+
+/* Estilo para los botones de acción dentro del menú (Calendario, Añadir Cat) */
+.header-menu-dropdown .action-btn {
+    width: 100%;
+    height: auto;
+    padding: 10px 12px !important;
+    background: var(--bg-alt) !important;
+    border: 1px solid var(--border-soft) !important;
+    border-radius: 10px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    color: var(--text-main) !important;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.header-menu-dropdown .action-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.header-menu-dropdown .action-btn:active {
+    background: var(--border-soft) !important;
+    transform: scale(0.98);
+}
+
+/* Estilo para el label de la categoría activa (primer elemento del menú) */
+.header-menu-label-item {
+    padding: 10px 12px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    margin-bottom: 8px; /* Lo separamos de los botones de abajo */
+}
+
+.header-menu-label-item #activeCategoryLabel {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-main);
+    margin-left: 0 !important; /* Reseteamos el margen que tenía antes */
+}
+
+.more-options-btn svg {
+    fill: var(--text-main);
+}
+
+/* =========================================
+   ESTADO DE ÁNIMO (MOOD) WIDGET
+   ========================================= */
+.mood-widget {
+    display: flex;
+    align-items: center;
+    background: var(--bg-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    padding: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    overflow: hidden;
+    transition: max-width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 38px; /* Ancho inicial comprimido */
+    height: 38px;
+    position: relative;
+}
+.mood-widget.expanded {
+    max-width: 200px; /* Ancho expandido */
+}
+.mood-widget-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    z-index: 2;
+    transition: transform 0.2s;
+}
+.mood-widget-btn:active {
+    transform: scale(0.9);
+}
+.mood-widget-options {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 8px;
+    padding-right: 4px;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+.mood-widget.expanded .mood-widget-options {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.mood-option {
+    font-size: 20px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.mood-option:active {
+    transform: scale(1.3);
+}
+
+/* --- ANIMACIÓN DE EMOJI FLOTANTE --- */
+.floating-emoji {
+    position: fixed;
+    font-size: 30px;
+    pointer-events: none;
+    z-index: 10000;
+    animation: floatUp 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-80px) scale(1); opacity: 0; }
+}
+
+/* --- COLORES DE ESTADO DE ÁNIMO PARA EL CALENDARIO --- */
+.calendar-day.mood-amazing { background-color: rgba(255, 215, 0, 0.25); }  /* 😄 Amarillo pastel */
+.calendar-day.mood-happy { background-color: rgba(82, 189, 148, 0.25); }    /* 🙂 Verde pastel */
+.calendar-day.mood-neutral { background-color: rgba(120, 119, 116, 0.2); }  /* 😑 Gris pastel */
+.calendar-day.mood-sad { background-color: rgba(84, 163, 214, 0.25); }      /* 😕 Azul pastel */
+.calendar-day.mood-terrible { background-color: rgba(235, 87, 87, 0.25); }  /* 😩 Rojo pastel */
+
+/* =========================================
+   NUEVOS MODALES DE HÁBITOS
+   ========================================= */
+.habit-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 10030;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(2px);
+}
+.habit-modal-overlay.active {
+    opacity: 1;
+}
+.habit-modal-sheet {
+    position: absolute;
+    bottom: 0; left: 0; width: 100%;
+    background: var(--bg-app);
+    border-radius: 24px 24px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    height: 85vh;
+}
+.habit-modal-overlay.active .habit-modal-sheet {
+    transform: translateY(0);
+}
+.habit-modal-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-soft);
+}
+.habit-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: none;
+}
+.habit-modal-body::-webkit-scrollbar { display: none; }
+.habit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding-bottom: 30px;
+}
+.habit-preset-card {
+    border-radius: 18px;
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+.habit-preset-card:active { transform: scale(0.94); }
+.habit-preset-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.habit-preset-title { font-size: 15px; font-weight: 700; }
+
+/* Config Modal */
+.hc-header-bg { padding: 15px; border-radius: 24px 24px 0 0; color: white; display: flex; justify-content: flex-end; height: 100px; }
+.hc-icon-container { font-size: 45px; background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: -40px auto 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 2; }
+.hc-time-chip { background: var(--bg-card); border: 1px solid var(--border-soft); padding: 8px 15px; border-radius: 12px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); color: var(--text-main); }
+.hc-time-chip button { background: var(--pastel-red); color: var(--error); border: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; padding: 0; cursor: pointer; font-weight: bold; }
+
+.habit-card.active[style*="background"] {
+    border-color: transparent !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+}
+.habit-card.active[style*="background"] .habit-title,
+.habit-card.active[style*="background"] .habit-check {
+    color: white !important;
+}
+
+/* =========================================
+   HABIT CARDS (Grid Layout)
+   ========================================= */
+.habit-card-grid {
+    background: var(--bg-card);
+    border-radius: 22px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-soft);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    animation: noteAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    min-height: 160px;
+}
+.habit-card-grid:active { transform: scale(0.95); }
+.habit-card-grid.active { border-color: transparent; }
+
+.habit-card-grid.active.habit-color-default { background: linear-gradient(135deg, var(--accent) 0%, #3b8cc4 100%); box-shadow: 0 8px 20px rgba(84, 163, 214, 0.35); }
+.habit-card-grid.active.habit-color-blue { background: linear-gradient(135deg, #4A90E2 0%, #2C6EAF 100%); box-shadow: 0 8px 20px rgba(74, 144, 226, 0.35); }
+.habit-card-grid.active.habit-color-darkblue { background: linear-gradient(135deg, #3D5A80 0%, #293241 100%); box-shadow: 0 8px 20px rgba(61, 90, 128, 0.35); }
+.habit-card-grid.active.habit-color-yellow { background: linear-gradient(135deg, #F2C94C 0%, #EE964B 100%); box-shadow: 0 8px 20px rgba(242, 201, 76, 0.35); }
+.habit-card-grid.active.habit-color-purple { background: linear-gradient(135deg, #9B5DE5 0%, #6A4C93 100%); box-shadow: 0 8px 20px rgba(155, 93, 229, 0.35); }
+.habit-card-grid.active.habit-color-green { background: linear-gradient(135deg, #52BD94 0%, #2D6A4F 100%); box-shadow: 0 8px 20px rgba(82, 189, 148, 0.35); }
+.habit-card-grid.active[style*="background"] { border-color: transparent !important; box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important; }
+
+.habit-card-grid.active .habit-title { color: #ffffff; }
+.habit-card-grid.active .habit-time { background: rgba(255, 255, 255, 0.25); color: white; border-color: transparent; }
+
+.habit-card-grid .modern-toggle { background: var(--border-soft); transition: all 0.3s ease; border: 2px solid transparent;}
+.habit-card-grid.active .modern-toggle { background: rgba(255, 255, 255, 0.3); }
+.habit-card-grid.active .modern-toggle::after { transform: translateX(20px); }
+
+.habit-card-grid .habit-icon-wrapper { background: var(--bg-alt); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; justify-content: center; }
+.habit-card-grid.active .habit-icon-wrapper { background: white; transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+
+.habit-day-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border-soft); transition: all 0.2s; }
+.habit-day-dot.active { background: var(--accent); box-shadow: 0 2px 4px rgba(84, 163, 214, 0.3); }
+.habit-card-grid.active .habit-day-dot { background: rgba(255, 255, 255, 0.2); }
+.habit-card-grid.active .habit-day-dot.active { background: #ffffff; box-shadow: 0 0 5px rgba(255,255,255,0.4); }
+
+.habit-day-text { font-size: 9px; font-weight: 700; color: var(--text-sub); transition: color 0.3s, opacity 0.3s; }
+.habit-card-grid.active .habit-day-text { color: #ffffff; opacity: 0.9 !important; }
+}
+
+/* =========================================
+   VISTA DETALLE DE HÁBITO
+   ========================================= */
+#view-habit-detail {
+    background: var(--bg-app);
+    gap: 20px;
+}
+
+.habit-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.habit-detail-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.habit-detail-icon {
+    font-size: 36px;
+    width: 60px;
+    height: 60px;
+    background: var(--bg-card);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-light);
+}
+
+.habit-detail-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.habit-detail-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.habit-complete-btn {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 10px solid var(--bg-alt);
+    background: var(--bg-card);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.habit-complete-btn:active {
+    transform: scale(0.9);
+}
+
+.habit-complete-btn.completed {
+    border-color: var(--success);
+    background: var(--pastel-green);
+}
+
+.habit-complete-icon {
+    font-size: 48px;
+    transition: transform 0.3s ease;
+}
+
+.habit-complete-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 8px;
+}
+
+.habit-complete-btn.completed .habit-complete-text {
+    color: var(--success);
+}
+
+.habit-completion-count {
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+/* Animación de completado */
+.completion-burst {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    border-radius: 50%;
+    background: var(--success);
+    transform: scale(0);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.habit-complete-btn.animating .completion-burst {
+    animation: burst 0.6s ease-out;
+}
+
+@keyframes burst {
+    from { transform: scale(0); opacity: 0.5; }
+    to { transform: scale(2); opacity: 0; }
+}
+
+/* Estadísticas del Hábito */
+.habit-stats-container {
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: auto; /* Pushes it to the bottom */
+}
+
+.habit-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.habit-stat-item {
+    background: var(--bg-alt);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.habit-stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.habit-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+}
+
+.habit-heatmap-container {
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.habit-heatmap {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column;
+    gap: 4px;
+}
+
+.heatmap-day {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background-color: var(--border-soft);
+    opacity: 0.7;
+}
+
+.heatmap-day[data-level="1"] { background-color: #c6e48b; opacity: 1; }
+.heatmap-day[data-level="2"] { background-color: #7bc96f; opacity: 1; }
+.heatmap-day[data-level="3"] { background-color: #239a3b; opacity: 1; }
+.heatmap-day[data-level="4"] { background-color: #196127; opacity: 1; }
+
+/* =========================================
+   WIDGET HÁBITOS ACTIVOS (CÍRCULOS)
+   ========================================= */
+.active-habits-row {
+    display: flex;
+    gap: 18px;
+    overflow-x: auto;
+    padding: 10px 5px 25px 5px;
+    margin-bottom: 5px;
+    scrollbar-width: none;
+}
+.active-habits-row::-webkit-scrollbar {
+    display: none;
+}
+.habit-circle-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.habit-circle-widget {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    font-size: 26px;
+    border: 1px solid var(--border-soft);
+}
+body.dark-mode .habit-circle-widget {
+    background: #252525;
+    border-color: #373737;
+}
+.habit-circle-svg {
+    position: absolute;
+    top: -4px; left: -4px;
+    width: 68px; height: 68px;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+.habit-circle-bg { fill: none; stroke: var(--border-soft); stroke-width: 3.5; }
+.habit-circle-progress {
+    fill: none; stroke: var(--accent); stroke-width: 3.5;
+    stroke-linecap: round; stroke-dasharray: 188.5; stroke-dashoffset: 188.5;
+    transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.habit-circle-time {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; font-weight: 700; color: var(--text-sub); white-space: nowrap;
+    background: var(--bg-card); padding: 2px 6px; border-radius: 8px;
+    border: 1px solid var(--border-soft); box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+body.dark-mode .habit-circle-time { background: var(--bg-app); border-color: var(--border-soft); }
+
+/* =========================================
+   TABS SUPERIORES (Organizar Tareas)
+   ========================================= */
+.org-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    padding: 10px 0;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.org-tab-btn.active {
+    background: var(--bg-card);
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.org-tab-btn svg {
+    transition: transform 0.2s;
+}
+.org-tab-btn.active svg {
+    transform: scale(1.1);
+}
+
+/* =========================================
+   CARRUSEL DE PLANIFICACIÓN (TICKTICK STYLE)
+   ========================================= */
+.plan-carousel {
+    position: relative;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory; /* Fuerza a que las tarjetas se centren al deslizar */
+    gap: 15px;
+    padding: 5px;
+    scrollbar-width: none; /* Oculta la barra en Firefox */
+    flex: 1;
+    align-items: stretch; /* Estira las tarjetas para que ocupen todo el alto */
+}
+.plan-carousel::-webkit-scrollbar { display: none; } /* Oculta la barra en Chrome/Safari */
+
+.plan-card {
+    min-width: 100%;
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+    background: var(--bg-card);
+    border: none;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Permite scroll interno si la lista es muy larga */
+    box-sizing: border-box;
+}
+
+.plan-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--bg-app);
+    padding-bottom: 10px;
+}
+
+.plan-check-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.plan-check-box {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border-soft);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.plan-check-item.done .plan-check-box { background: var(--accent); border-color: var(--accent); }
+.plan-check-item.done .plan-check-box::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+
+.plan-check-item input[type="text"] {
+    flex: 1; border: none; background: transparent; font-size: 14px; outline: none; color: var(--text-main); padding: 0;
+}
+
+.plan-check-item.done input[type="text"] { text-decoration: line-through; color: var(--text-sub); opacity: 0.6; }
+
+.add-check-item { color: var(--text-sub); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; margin-top: 10px; cursor: pointer; }
+
+/* Tarjeta especial para las Tareas Pendientes */
+.pending-task-card {
+    min-width: 100%;
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+    background: var(--bg-alt);
+    border: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    border-radius: 24px;
+    padding: 20px 25px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
+    overflow-y: auto;
+    box-sizing: border-box;
+    word-break: break-word;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+    transform: scale(0.9);
+    opacity: 0.6;
+}
+
+/* Estado activo de la tarjeta pendiente durante el scroll */
+.pending-task-card.active-card {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+/* =========================================
+   HISTORIAL (Tareas Anteriores)
+   ========================================= */
+.history-date-group {
+    margin-bottom: 20px;
+}
+.history-date-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-sub);
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-reschedule {
+    background: var(--pastel-blue);
+    color: var(--accent);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.btn-reschedule:active {
+    transform: scale(0.9);
+    background: var(--accent);
+    color: white;
+}
+
+/* =========================================
+   INSIGNIA NOTIFICACIÓN Y TOAST DE ENERGÍA
+   ========================================= */
+.nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 16px);
+    width: 10px;
+    height: 10px;
+    background-color: var(--error);
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    display: none;
+    z-index: 2;
+}
+body.dark-mode .nav-badge { border-color: #1e1e1e; } /* Ajuste de borde al nav oscuro */
+.nav-badge.active { display: block; }

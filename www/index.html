@@ -9,6 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -113,15 +114,18 @@
             <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; position: relative;">
                 <button id="taskViewToggle" class="task-view-toggle" onclick="toggleTaskView()">Todas</button>
                 <h1 id="mainDateTitle" style="margin: 0; text-transform: capitalize;">Hoy</h1>
+            <div style="position: relative; display: flex; align-items: center;">
                 <div id="moodWidget" class="mood-widget">
                     <div id="moodBtn" class="mood-widget-btn" title="¿Cómo te sientes hoy?">🤔</div>
                     <div class="mood-widget-options">
-                        <span class="mood-option" data-mood="😄">😄</span>
-                        <span class="mood-option" data-mood="🙂">🙂</span>
-                        <span class="mood-option" data-mood="😑">😑</span>
-                        <span class="mood-option" data-mood="😕">😕</span>
-                        <span class="mood-option" data-mood="😩">😩</span>
+                        <span class="mood-option" data-mood="🤩">🤩</span>
+                        <span class="mood-option" data-mood="😎">😎</span>
+                        <span class="mood-option" data-mood="🫠">🫠</span>
+                        <span class="mood-option" data-mood="🥺">🥺</span>
+                        <span class="mood-option" data-mood="🤯">🤯</span>
                     </div>
+                    </div>
+                <div id="moodTooltip" class="mood-tooltip">¿Cómo te sientes hoy?</div>
                 </div>
             </div>
 
@@ -395,6 +399,17 @@
         </div>
     </div>
 
+    <div class="category-stats" id="weekly-stats-card" style="margin-bottom: 20px; padding: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <h3 style="margin: 0;">Productividad Semanal</h3>
+            <button id="shareChartBtn" class="action-btn" style="color: var(--accent);" title="Compartir Gráfico">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+        </div>
+        <div id="weekly-chart" class="weekly-chart-container"></div>
+        <div id="weekly-motivation" style="text-align: center; font-size: 13px; font-weight: 600; color: var(--text-sub); margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-soft);"></div>
+    </div>
+
     <div class="category-stats">
         <h3>Enfoque por Categoría</h3>
         <div id="category-bars-container">
@@ -525,9 +540,9 @@
             <div id="topTaskOptions" style="display: flex; align-items: center; gap: 8px;">
             </div>
         </div>
-        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="3" style="min-height: 60px; padding-bottom: 20px;"></textarea>
+        <textarea id="sheetTaskInput" placeholder="Detalles de la tarea..." rows="1" style="min-height: 26px; padding-bottom: 10px;"></textarea>
         
-        <div id="bottomTaskOptions" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-soft); margin-top: auto; position: sticky; bottom: -20px; background: var(--bg-app); z-index: 10; padding-bottom: 20px;">
+        <div id="bottomTaskOptions" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-soft); margin-top: auto; position: sticky; bottom: 0; background: var(--bg-app); z-index: 10; padding-bottom: 15px;">
         </div>
         
     </div>

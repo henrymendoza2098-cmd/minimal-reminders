@@ -737,6 +737,45 @@ body.dark-mode .btn-reset {
     background: var(--accent);
     transition: width 0.8s ease-out;
 }
+
+/* =========================================
+   GRÁFICO SEMANAL (Perfil)
+   ========================================= */
+.weekly-chart-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 130px;
+    padding: 15px 5px 5px 5px;
+    gap: 6px;
+}
+.chart-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 6px;
+}
+.chart-bar-bg {
+    width: 100%;
+    max-width: 28px;
+    height: 80px; /* Altura máxima de la barra */
+    background: #f1f1f0;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+.chart-bar-fill {
+    width: 100%;
+    background: var(--accent);
+    border-radius: 6px;
+    transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chart-bar-fill.today { background: var(--success); }
+.chart-label { font-size: 11px; color: var(--text-sub); font-weight: 600; }
+.chart-val { font-size: 11px; color: var(--text-main); font-weight: 800; margin-bottom: 2px; }
+
 /* AJUSTE DE BOTONES EN LISTAS (Móvil) */
 .actions {
     display: flex;
@@ -1038,9 +1077,9 @@ body.dark-mode .menu-icon-wrapper {
    ========================================= */
 .notes-category-carousel {
     display: flex;
-    gap: 15px;
+    gap: 1px;
     overflow-x: auto;
-    padding: 10px 5px 20px 5px;
+   
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
 }
@@ -1384,20 +1423,51 @@ body.dark-mode .note-card {
     display: flex;
     flex-direction: column;
 }
-body.keyboard-open .bottom-sheet .sheet-content {
-    height: 100%;
-    max-height: 100%;
-    border-radius: 0;
-    padding-bottom: 0px; 
-}
-body.keyboard-open #bottomTaskOptions {
+
+#bottomTaskOptions {
     bottom: 0 !important;
     padding-bottom: 10px !important;
+}
+
+/* Panel de Agregar Tarea: Tamaño reducido y fijo para esquivar el teclado */
+#taskBottomSheet:not(.full-height) .sheet-content {
+    height: auto !important;
+    max-height: 85vh !important;
+}
+
+/* ==============================================
+   SOLUCIÓN DEFINITIVA PARA EL TECLADO EN MÓVILES
+   ============================================== */
+body.keyboard-open .bottom-sheet {
+    align-items: flex-end !important;
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    /* Nueva regla: Empuja el contenedor hacia arriba exactamente la altura del teclado */
+    padding-bottom: var(--keyboard-height, 0px) !important;
+}
+
+body.keyboard-open .bottom-sheet .sheet-content {
+    height: auto !important;
+    /* Aprovechar todo el espacio restante sin aplastar el panel */
+    max-height: calc(100vh - var(--keyboard-height, 0px)) !important;
+    border-radius: 20px 20px 0 0 !important; /* Solo bordes redondeados arriba */
+    padding-bottom: 0px !important; 
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.15); /* Sombra invertida para que se vea bien desde abajo */
+}
+
+body.keyboard-open #sheetTaskInput {
+    max-height: 120px !important;
+    overflow-y: auto !important;
 }
 .bottom-sheet.full-height .sheet-content {
     height: 100vh;
     border-radius: 0; /* Quita los bordes redondeados al usar la pantalla completa */
     padding-bottom: 20px; /* Da margen para que el teclado virtual no tape el texto final */
+}
+
+#taskBottomSheet .sheet-content {
+    padding-bottom: 0px; /* Elimina el padding base del contenedor para no dejar huecos */
 }
 #openTaskSheetBtn {
     /* Eliminamos las reglas sobreescritas para que use las de .fab-btn unificadas */
@@ -2934,6 +3004,31 @@ visibility: visible;
     transform: scale(1.3);
 }
 
+/* --- TOOLTIP ¿CÓMO TE SIENTES HOY? --- */
+.mood-tooltip {
+    position: absolute;
+    left: calc(100% + 10px); /* A la derecha del widget */
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+.mood-tooltip::after {
+    content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+    border-width: 5px 6px 5px 0; border-style: solid; border-color: transparent var(--accent) transparent transparent;
+}
+.mood-tooltip.show { opacity: 1; transform: translateY(-50%) translateX(5px); }
+
 /* --- ANIMACIÓN DE EMOJI FLOTANTE --- */
 .floating-emoji {
     position: fixed;
@@ -3441,8 +3536,8 @@ body.dark-mode .habit-circle-time { background: var(--bg-app); border-color: var
     border: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     border-radius: 24px;
-    padding: 20px 25px;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 25px 20px 20px 20px;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
     text-align: center;
     overflow-y: auto;
     box-sizing: border-box;

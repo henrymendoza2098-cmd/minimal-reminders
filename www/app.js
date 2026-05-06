@@ -341,11 +341,33 @@ async function syncNotificationsWithStorage() {
 
         // 2. Obtenemos nuestros recordatorios actuales
         const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
-        const reminderIds = reminders.map(r => parseInt(r.id));
+        
+        // Generar TODOS los IDs válidos (rápidas + hábitos con sus hashes)
+        let validIds = [];
+        reminders.forEach(r => {
+            if (r.enabled === false) return; // Si está desactivado, sus alarmas deben borrarse
+            
+            if (r.isHabit) {
+                validIds = validIds.concat(window.getNotificationIdsForAlarm(r));
+            } else {
+                validIds.push(parseInt(r.id));
+            }
+        });
 
-        // 3. Comparamos: Si la alarma de Android no está en nuestra lista, se cancela
+        // Añadir las Tareas con hora programada
+        const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        tasks.forEach(t => {
+            if (t.time && !t.completed) {
+                validIds.push(parseInt(t.id));
+            }
+        });
+
+        // 3. Comparamos: Si la alarma de Android no está en la lista de validIds, se cancela
         pendingList.forEach(notif => {
-            if (!reminderIds.includes(notif.id)) {
+            // Ignorar el ID reservado de la sugerencia de energía diaria
+            if (notif.id === 888888) return;
+
+            if (!validIds.includes(parseInt(notif.id))) {
                 Notifications.cancel({ notifications: [{ id: notif.id }] });
                 console.log(`Sincronización: Alarma fantasma ${notif.id} eliminada.`);
             }
@@ -913,8 +935,30 @@ requestPermissions();
 
 if (Notifications) {
     Notifications.addListener('localNotificationActionPerformed', (notificationAction) => {
-        const reminderId = notificationAction.notification.extra.reminderId;
         const actionId = notificationAction.actionId;
+        const extra = notificationAction.notification.extra || {};
+
+        // 1. Manejo de Tareas Programadas (Buzón)
+        if (extra.isTask) {
+            const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            const task = tasks.find(t => t.id === extra.taskId);
+            if (task) {
+                if (actionId === 'done') {
+                    window.toggleTaskComplete(task.id);
+                } else if (actionId === 'snooze') {
+                    window.snoozeTask(task.id, 'later');
+                } else {
+                    // Clic en la notificación -> abre la app y muestra el buzón intrusivo
+                    if (typeof window.showPopupReminder === 'function') {
+                        window.showPopupReminder(task);
+                    }
+                }
+            }
+            return; // Terminar aquí para tareas
+        }
+
+        // 2. Manejo original de Alarmas / Hábitos
+        const reminderId = extra.reminderId;
 
         if (actionId === 'done') {
             const list = JSON.parse(localStorage.getItem('reminders') || '[]');
@@ -2174,18 +2218,18 @@ function renderPendingCarousel() {
     const pending = allTasks.filter(t => !t.completed && !t.skipped && (t.date === getTodayStr() || isOverdue(t.date)));
     
     if (pending.length === 0) {
-        carousel.innerHTML = `<div class="pending-task-card active-card" style="background: var(--bg-card); border: none;"><div style="font-size: 40px; margin-bottom: 15px;">🎉</div><div style="font-weight: 800; font-size: 20px; color: var(--text-main);">¡Día despejado!</div><div style="font-size: 14px; color: var(--text-sub); margin-top: 8px;">No hay tareas pendientes para hoy.</div></div>`;
+        carousel.innerHTML = `<div class="pending-task-card active-card" style="background: var(--bg-card); border: none; justify-content: center;"><div style="font-size: 40px; margin-bottom: 15px;">🎉</div><div style="font-weight: 800; font-size: 20px; color: var(--text-main);">¡Día despejado!</div><div style="font-size: 14px; color: var(--text-sub); margin-top: 8px;">No hay tareas pendientes para hoy.</div></div>`;
         return;
     }
     
     carousel.innerHTML = pending.map((t, index) => `
         <div class="pending-task-card ${index === 0 ? 'active-card' : ''}">
-            <div style="font-size: 40px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">${t.emoji || '📝'}</div>
-            <div style="font-weight: 800; font-size: 20px; color: var(--text-main); margin-bottom: 15px; line-height: 1.2;">${t.text}</div>
-            ${t.time ? `<div style="font-size: 14px; font-weight: 800; color: var(--accent); background: white; padding: 8px 16px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; display:inline-block;">⏰ ${t.time}</div>` : ''}
-            ${isOverdue(t.date) ? `<div style="font-size: 13px; font-weight: bold; color: var(--error); margin-bottom: 10px;">(Vencida)</div>` : ''}
+            <div style="font-size: 36px; margin-bottom: 10px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">${t.emoji || '📝'}</div>
+            <div style="font-weight: 800; font-size: 18px; color: var(--text-main); margin-bottom: 10px; line-height: 1.2;">${t.text}</div>
+            ${t.time ? `<div style="font-size: 13px; font-weight: 800; color: var(--accent); background: white; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 10px; display:inline-block;">⏰ ${t.time}</div>` : ''}
+            ${isOverdue(t.date) ? `<div style="font-size: 12px; font-weight: bold; color: var(--error); margin-bottom: 10px;">(Vencida)</div>` : ''}
             
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: auto; padding-top: 15px;">
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: auto; padding-top: 10px;">
                 <button class="btn-text" style="font-size: 14px; font-weight: 600; color: var(--success); width: 100%; text-align: center; background: rgba(82, 189, 148, 0.1); border-radius: 12px; padding: 12px;" onclick="toggleTaskComplete(${t.id}); setTimeout(()=>renderPendingCarousel(), 300);">✓ Completar tarea</button>
                 
                 <div style="display: flex; gap: 8px; width: 100%;">
@@ -2722,6 +2766,150 @@ if (saveTaskBtn) {
             </div>
         `;
     });
+    
+    // 4. Renderizar Gráfico Semanal
+    renderWeeklyChart();
+}
+
+function renderWeeklyChart() {
+    const chartContainer = document.getElementById('weekly-chart');
+    if (!chartContainer) return;
+
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const histHabits = JSON.parse(localStorage.getItem('habitHistory') || '{}');
+    
+    const daysData = [];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    
+    let weeklyTotal = 0; // Guardará el total de la semana
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        
+        // Formato para tareas (DD/MM/YYYY)
+        const taskDateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        
+        // Formato para hábitos (YYYY-MM-DD)
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const habitDateStr = `${y}-${m}-${day}`;
+        
+        // Contar tareas completadas ese día
+        const completedTasks = tasks.filter(t => t.completed && t.date === taskDateStr).length;
+        
+        // Contar hábitos completados ese día
+        let completedHabits = 0;
+        Object.values(histHabits).forEach(historyArray => {
+            completedHabits += historyArray.filter(ts => {
+                const hd = new Date(ts);
+                if (isNaN(hd)) return false;
+                return `${hd.getFullYear()}-${String(hd.getMonth() + 1).padStart(2, '0')}-${String(hd.getDate()).padStart(2, '0')}` === habitDateStr;
+            }).length;
+        });
+        
+        const dailyTotal = completedTasks + completedHabits;
+        weeklyTotal += dailyTotal;
+
+        daysData.push({
+            label: i === 0 ? 'Hoy' : dayNames[d.getDay()],
+            total: dailyTotal,
+            isToday: i === 0
+        });
+    }
+    
+    const maxVal = Math.max(...daysData.map(d => d.total), 1); // Evitar dividir por 0 si no hay tareas
+    
+    chartContainer.innerHTML = daysData.map(data => {
+        const heightPercent = (data.total / maxVal) * 100;
+        return `
+            <div class="chart-bar-wrapper">
+                <span class="chart-val" style="opacity: ${data.total > 0 ? 1 : 0.3}">${data.total}</span>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill ${data.isToday ? 'today' : ''}" style="height: 0%" data-target-height="${heightPercent}%"></div>
+                </div>
+                <span class="chart-label" style="${data.isToday ? 'color: var(--text-main); font-weight: 800;' : ''}">${data.label}</span>
+            </div>
+        `;
+    }).join('');
+    
+    // Retraso ligero para que el navegador ejecute la transición CSS de altura (Efecto de crecimiento)
+    setTimeout(() => {
+        chartContainer.querySelectorAll('.chart-bar-fill').forEach(bar => {
+            bar.style.height = bar.getAttribute('data-target-height');
+        });
+    }, 50);
+
+    // --- MENSAJES MOTIVACIONALES DINÁMICOS ---
+    const motivationEl = document.getElementById('weekly-motivation');
+    if (motivationEl) {
+        let msg = "";
+        if (weeklyTotal === 0) {
+            const msgs = ["¡Toda gran aventura empieza con un paso! Hoy es el día. 💪", "Un lienzo en blanco. ¡Empieza a completar tus metas! ✨", "No hay prisa, pero tampoco pausas. ¡A por ello! 🚀"];
+            msg = msgs[Math.floor(Math.random() * msgs.length)];
+        } else if (weeklyTotal < 10) {
+            const msgs = ["¡Buen comienzo! Sigue manteniendo ese ritmo constante. 🐢", "Poco a poco se llega lejos. ¡Sigue así! 🌟", "Estás construyendo el hábito, no te detengas. 🔋"];
+            msg = msgs[Math.floor(Math.random() * msgs.length)];
+        } else if (weeklyTotal < 30) {
+            const msgs = ["¡Excelente semana! Tu esfuerzo está dando grandes frutos. 🔥", "¡Imparable! Tienes una racha increíble. ⚡", "¡Muy bien hecho! Eres un ejemplo de constancia. 🎯"];
+            msg = msgs[Math.floor(Math.random() * msgs.length)];
+        } else {
+            const msgs = ["¡Semana Legendaria! Has superado todas las expectativas. 👑", "¡Felicidades, eres una máquina de la productividad! 🏆", "¡Nivel Dios alcanzado! Sigue inspirando con ese ritmo. 💎"];
+            msg = msgs[Math.floor(Math.random() * msgs.length)];
+        }
+        motivationEl.innerText = msg;
+    }
+}
+
+// ==========================================
+// CAPTURA DE PANTALLA Y COMPARTIR GRÁFICO
+// ==========================================
+const shareChartBtn = document.getElementById('shareChartBtn');
+if (shareChartBtn) {
+    shareChartBtn.addEventListener('click', async () => {
+        if (typeof html2canvas === 'undefined') {
+            alert('Cargando herramienta de captura, intenta de nuevo en unos segundos.');
+            return;
+        }
+        
+        const chartCard = document.getElementById('weekly-stats-card');
+        
+        // 1. Escondemos el propio botón para que no salga en la foto
+        shareChartBtn.style.display = 'none';
+
+        try {
+            // 2. Tomamos la foto de alta calidad
+            const canvas = await html2canvas(chartCard, {
+                backgroundColor: '#ffffff', // Fondo blanco limpio
+                scale: 2, // Escala al doble para que no salga borrosa
+                borderRadius: 16
+            });
+            
+            shareChartBtn.style.display = 'flex'; // Restaurar botón
+
+            // 3. Transformamos el Canvas a archivo e intentamos enviarlo
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], "productividad-semanal.png", { type: "image/png" });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ title: 'Mi Productividad', text: '¡Mira mi racha de tareas completadas! 🚀', files: [file] });
+                    } catch(e) { console.log("Compartir cancelado"); }
+                } else {
+                    // Si el navegador es incompatible, simplemente descargamos la imagen
+                    const link = document.createElement('a');
+                    link.download = 'productividad-semanal.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    alert("¡Gráfico descargado! Ya puedes subirlo donde quieras.");
+                }
+            }, 'image/png');
+        } catch (err) {
+            shareChartBtn.style.display = 'flex';
+            console.error(err);
+            alert("Hubo un problema generando la captura.");
+        }
+    });
 }
 
 // ==========================================
@@ -3124,9 +3312,6 @@ function renderTaskOptionsUI() {
             <div class="toolbar-item" title="Carga Mental" style="transform: scale(0.9);">
                 <div class="icon-btn" id="importanceIconBtn" onclick="toggleTaskOptionPanel('importance')">${window.getImportanceIcon(currentTaskImportance)}</div>
             </div>
-            <div class="toolbar-item" title="Mensaje Emergente" style="transform: scale(0.9);">
-                <div class="icon-btn ${currentTaskIsPopup ? 'active' : ''}" id="buzonIconBtn" onclick="toggleTaskOptionPanel('buzon')">📪</div>
-            </div>
         `;
     }
 
@@ -3134,10 +3319,10 @@ function renderTaskOptionsUI() {
         bottomContainer.innerHTML = `
             <div style="display: flex; gap: 12px;">
                 <div class="toolbar-item" title="Añadir hora">
-                    <div class="icon-btn ${currentTaskTime ? 'active' : ''}" id="timeIconBtn">
+                    <div class="icon-btn ${currentTaskIsPopup ? 'active' : ''}" id="timeIconBtn" onclick="toggleTaskOptionPanel('time')" style="${currentTaskPopupTime ? 'width: auto; padding: 0 15px; border-radius: 20px; gap: 6px;' : ''}">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        ${currentTaskPopupTime ? `<span style="font-size: 14px; font-weight: 700;">${currentTaskPopupTime}</span>` : ''}
                     </div>
-                    <input type="time" id="taskTimeInput" class="hidden-input-overlay" value="${currentTaskTime}" onchange="currentTaskTime = this.value; document.getElementById('timeIconBtn').classList.toggle('active', !!this.value);">
                 </div>
                 <div class="toolbar-item" title="Compartir tarea">
                     <button type="button" class="icon-btn" onclick="shareCurrentTask()">
@@ -3182,7 +3367,7 @@ window.toggleTaskOptionPanel = (panelName) => {
             {val: 'low', label: 'Carga Baja', icon: '🏳️'}
         ];
         panel.innerHTML = imp.map(i => `<div class="custom-option-chip ${currentTaskImportance === i.val ? 'selected' : ''}" onclick="selectTaskOption('importance', '${i.val}')">${i.icon} <span>${i.label}</span></div>`).join('');
-    } else if (panelName === 'buzon') {
+    } else if (panelName === 'time') {
         const isToday = currentTaskPopupDate === getTodayStr();
         const isTomorrow = currentTaskPopupDate === getTomorrowStr();
         const isOther = !isToday && !isTomorrow && currentTaskPopupDate !== '';
@@ -3190,13 +3375,11 @@ window.toggleTaskOptionPanel = (panelName) => {
         panel.innerHTML = `
             <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">📬 Recordatorio Intrusivo (Pop-up)</span>
-                    <div style="width: 48px; height: 28px; background: ${currentTaskIsPopup ? 'var(--success)' : 'var(--border-soft)'}; border-radius: 15px; position: relative; transition: all 0.3s ease; cursor: pointer;" onclick="togglePopupMode()">
-                        <div style="position:absolute; top:4px; left:4px; width:20px; height:20px; background:white; border-radius:50%; transition:transform 0.3s; transform: translateX(${currentTaskIsPopup ? '20px' : '0'}); box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>
-                    </div>
+                    <span style="font-size: 13px; font-weight: bold; color: var(--text-main);">⏰ Programar Recordatorio</span>
+                    ${currentTaskIsPopup ? `<button class="btn-text" style="color: var(--error); font-size: 12px; padding: 0;" onclick="clearPopupTime()">Quitar</button>` : ''}
                 </div>
                 
-                <div id="buzonOptions" style="display: ${currentTaskIsPopup ? 'flex' : 'none'}; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-soft); padding-top: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-soft); padding-top: 10px;">
                     <div style="font-size: 11px; color: var(--text-sub); font-weight: bold; text-transform: uppercase;">1. ¿Qué día?</div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <div class="custom-option-chip ${isToday ? 'selected' : ''}" onclick="setPopupDate('today')">📅 <span>Hoy</span></div>
@@ -3212,6 +3395,10 @@ window.toggleTaskOptionPanel = (panelName) => {
                         <div class="custom-option-chip ${currentTaskPopupTime === '08:00' ? 'selected' : ''}" onclick="setPopupTime('08:00')">🌅 <span>Mañana (8am)</span></div>
                         <div class="custom-option-chip ${currentTaskPopupTime === '15:00' ? 'selected' : ''}" onclick="setPopupTime('15:00')">☀️ <span>Tarde (3pm)</span></div>
                         <div class="custom-option-chip ${currentTaskPopupTime === '20:00' ? 'selected' : ''}" onclick="setPopupTime('20:00')">🌙 <span>Noche (8pm)</span></div>
+                        <div class="custom-option-chip ${(currentTaskPopupTime && !['08:00','15:00','20:00'].includes(currentTaskPopupTime)) ? 'selected' : ''}" style="position:relative; overflow: hidden;">
+                            ⌚ <span>${(currentTaskPopupTime && !['08:00','15:00','20:00'].includes(currentTaskPopupTime)) ? currentTaskPopupTime : 'Otra hora'}</span>
+                            <input type="time" style="position:absolute; top:0; left:0; width:100%; height:200%; opacity:0; cursor: pointer;" onchange="setPopupTime(this.value)">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3235,30 +3422,41 @@ window.selectTaskOption = (type, val, extraIcon) => {
     if (textarea) textarea.focus();
 };
 
-window.togglePopupMode = () => {
-    currentTaskIsPopup = !currentTaskIsPopup;
-    if (currentTaskIsPopup && !currentTaskPopupDate) currentTaskPopupDate = getTodayStr();
-    document.getElementById('buzonIconBtn')?.classList.toggle('active', currentTaskIsPopup);
-    toggleTaskOptionPanel('buzon');
-};
-
 window.setPopupDate = (val) => {
     if (val === 'today') currentTaskPopupDate = getTodayStr();
     else if (val === 'tomorrow') currentTaskPopupDate = getTomorrowStr();
-    else {
+    else if (val) {
         const [y, m, d] = val.split('-');
         currentTaskPopupDate = `${d}/${m}/${y}`;
     }
     currentTaskIsPopup = true;
-    document.getElementById('buzonIconBtn')?.classList.add('active');
-    toggleTaskOptionPanel('buzon');
+    
+    const wasOpen = window.currentActivePanel === 'time';
+    renderTaskOptionsUI();
+    if (wasOpen) toggleTaskOptionPanel('time');
 };
 
 window.setPopupTime = (val) => {
+    if (!val) return;
     currentTaskPopupTime = val;
+    currentTaskTime = val;
     currentTaskIsPopup = true;
-    document.getElementById('buzonIconBtn')?.classList.add('active');
-    toggleTaskOptionPanel('buzon');
+    if (!currentTaskPopupDate) currentTaskPopupDate = getTodayStr();
+    
+    const wasOpen = window.currentActivePanel === 'time';
+    renderTaskOptionsUI();
+    if (wasOpen) toggleTaskOptionPanel('time');
+};
+
+window.clearPopupTime = () => {
+    currentTaskIsPopup = false;
+    currentTaskPopupTime = '';
+    currentTaskPopupDate = '';
+    currentTaskTime = '';
+    
+    const wasOpen = window.currentActivePanel === 'time';
+    renderTaskOptionsUI();
+    if (wasOpen) toggleTaskOptionPanel('time');
 };
 
 window.showPopupReminder = (task) => {
@@ -3309,17 +3507,32 @@ window.shareCurrentTask = () => {
         alert("Escribe algo para compartir primero.");
         return;
     }
-    if (navigator.share) {
+        
+        // Usar plugin nativo de Capacitor si está en Android/iOS
+        if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Share) {
+            Capacitor.Plugins.Share.share({
+                title: 'Tarea',
+                text: text,
+                dialogTitle: 'Compartir tarea'
+            }).catch(err => console.error('Error al compartir nativo:', err));
+        } 
+        // Fallback para Web
+        else if (navigator.share) {
         navigator.share({
             title: 'Tarea',
             text: text
         }).catch(err => console.error('Error al compartir:', err));
     } else {
-        alert("La función de compartir no está soportada en este navegador.");
+            alert("La función de compartir requiere el plugin @capacitor/share en el teléfono.");
+            // Fallback amigable: si el celular es antiguo o falla, se copia el texto automáticamente
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof showCopyToast === 'function') showCopyToast();
+                else alert("¡Tarea copiada al portapapeles!");
+            }).catch(err => alert("No se pudo copiar la tarea."));
     }
 };
 
-async function setupTaskReminder(text, timeStr, dateStr) {
+async function setupTaskReminder(text, timeStr, dateStr, taskId) {
     if (typeof Notifications === 'undefined' || !Notifications) return;
     if (!timeStr) return;
     
@@ -3334,12 +3547,13 @@ async function setupTaskReminder(text, timeStr, dateStr) {
             await Notifications.schedule({
                 notifications: [{
                     title: "📝 Tarea: " + text, 
-                    body: "Recordatorio de tu tarea programada a las " + timeStr,
-                    id: Math.floor(Math.random() * 1000000),
+                    body: "¡Es hora de tu tarea programada a las " + timeStr + "!",
+                    id: taskId || Math.floor(Math.random() * 1000000),
                     schedule: { at: reminderDate, allowWhileIdle: true },
                     importance: 5,
                     sound: 'res://platform_default',
-                    actionTypeId: 'REMINDER_ACTIONS'
+                    actionTypeId: 'REMINDER_ACTIONS',
+                    extra: { isTask: true, taskId: taskId }
                 }]
             });
         } catch (err) {
@@ -3616,6 +3830,11 @@ window.saveTaskFromSheet = function saveTaskFromSheet() {
     if (newText) {
         let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
         const taskEmoji = currentTaskCategory !== 'all' ? currentTaskCategory : selectedEmoji;
+        let taskIdToSave = currentEditingTaskId || Date.now();
+
+        if (currentEditingTaskId && typeof Notifications !== 'undefined' && Notifications) {
+            Notifications.cancel({ notifications: [{ id: Math.abs(currentEditingTaskId % 2147483647) }] });
+        }
 
         if (currentEditingTaskId) {
             tasks = tasks.map(t => t.id === currentEditingTaskId ? { 
@@ -3635,10 +3854,10 @@ window.saveTaskFromSheet = function saveTaskFromSheet() {
             let total = parseInt(localStorage.getItem('totalCreatedToday') || 0);
             localStorage.setItem('totalCreatedToday', total + 1);
 
-            const taskDate = selectedViewDate;
+            const taskDate = currentTaskIsPopup && currentTaskPopupDate ? currentTaskPopupDate : selectedViewDate;
             
             tasks.push({ 
-                id: Date.now(), 
+                id: taskIdToSave, 
                 text: newText, 
                 emoji: taskEmoji, 
                 completed: false,
@@ -3656,7 +3875,7 @@ window.saveTaskFromSheet = function saveTaskFromSheet() {
         localStorage.setItem('tasks', JSON.stringify(tasks));
 
         if (currentTaskTime) {
-            setupTaskReminder(newText, currentTaskTime, selectedViewDate);
+            setupTaskReminder(newText, currentTaskTime, currentTaskIsPopup && currentTaskPopupDate ? currentTaskPopupDate : selectedViewDate, taskIdToSave);
         }
     }
     
@@ -3915,32 +4134,94 @@ function renderHabitStats(habitId, container) {
 // Asegúrate de que el botón de volver también cierre correctamente
 document.getElementById('closeSheetBtn').onclick = saveTaskFromSheet;
 
-const initialHeight = window.innerHeight;
-
-window.addEventListener('resize', () => {
-    const bottomNav = document.querySelector('.bottom-nav');
-    const currentHeight = window.innerHeight;
-
-    if (currentHeight < initialHeight * 0.8) {
-        // El teclado está abierto (la pantalla se redujo más de un 20%)
-        if (bottomNav) {
-            bottomNav.style.visibility = 'hidden';
-            bottomNav.style.opacity = '0';
-        }
+// --- SOLUCIÓN DEFINITIVA TECLADO (CAPACITOR API) ---
+if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Keyboard) {
+    const Keyboard = Capacitor.Plugins.Keyboard;
+    
+    Keyboard.addListener('keyboardWillShow', (info) => {
         document.body.classList.add('keyboard-open');
-        const editorHeader = document.querySelector('.editor-header');
-        if (editorHeader) {
-            editorHeader.style.bottom = '0px'; 
-        }
-    } else {
-        // El teclado se cerró
-        if (bottomNav) {
-            bottomNav.style.visibility = 'visible';
-            bottomNav.style.opacity = '1';
-        }
+        // Pasamos la altura real del teclado al CSS
+        document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) bottomNav.style.display = 'none';
+    });
+
+    Keyboard.addListener('keyboardWillHide', () => {
         document.body.classList.remove('keyboard-open');
+        document.body.style.setProperty('--keyboard-height', '0px');
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) bottomNav.style.display = 'flex';
+    });
+} else {
+    // Fallback navegador web
+    const initialHeight = window.innerHeight;
+    const handleResizeOrKeyboard = () => {
+        const currentHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (currentHeight < initialHeight * 0.8) {
+            document.body.classList.add('keyboard-open');
+            const kbHeight = window.visualViewport ? (initialHeight - window.visualViewport.height) : 320;
+            document.body.style.setProperty('--keyboard-height', `${kbHeight}px`);
+            if (bottomNav) bottomNav.style.display = 'none';
+        } else {
+            document.body.classList.remove('keyboard-open');
+            document.body.style.setProperty('--keyboard-height', '0px');
+            if (bottomNav) bottomNav.style.display = 'flex';
+        }
+    };
+    window.addEventListener('resize', handleResizeOrKeyboard);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', handleResizeOrKeyboard);
+}
+
+// ==========================================
+// MODO DESARROLLO: SIMULADOR DE TECLADO
+// ==========================================
+function setupFakeKeyboardSimulator() {
+    // Solo se activa si detecta que no estás compilado en la APK (estás en tu PC)
+    const isWeb = typeof Capacitor === 'undefined' || Capacitor.getPlatform() === 'web';
+    if (!isWeb) return; 
+
+    const fakeKb = document.createElement('div');
+    fakeKb.id = 'fakeKeyboardSimulator';
+    fakeKb.style.position = 'fixed';
+    fakeKb.style.bottom = '0';
+    fakeKb.style.left = '0';
+    fakeKb.style.width = '100%';
+    fakeKb.style.height = '320px'; // Altura promedio de un teclado de Android
+    fakeKb.style.backgroundColor = '#e5e7eb';
+    fakeKb.style.zIndex = '999999';
+    fakeKb.style.display = 'none';
+    fakeKb.style.flexDirection = 'column';
+    fakeKb.style.alignItems = 'center';
+    fakeKb.style.justifyContent = 'center';
+    fakeKb.style.borderTop = '2px solid #9ca3af';
+    fakeKb.innerHTML = `
+        <div style="font-size: 20px; font-weight: bold; color: #374151; margin-bottom: 15px;">⌨️ Teclado Virtual Simulado</div>
+        <button id="closeFakeKbBtn" style="padding: 10px 20px; border-radius: 10px; background: var(--accent); color: white; border: none; font-size: 16px; cursor: pointer;">Cerrar (Ocultar Teclado)</button>
+    `;
+    document.body.appendChild(fakeKb);
+
+    document.getElementById('closeFakeKbBtn').onclick = () => {
+        fakeKb.style.display = 'none';
+        document.body.classList.remove('keyboard-open');
+        document.body.style.setProperty('--keyboard-height', '0px');
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) bottomNav.style.display = 'flex';
+    };
+
+    // Escuchamos el campo de texto de tareas para abrir el simulador en PC
+    const sheetInput = document.getElementById('sheetTaskInput');
+    if (sheetInput) {
+        sheetInput.addEventListener('focus', () => {
+            fakeKb.style.display = 'flex';
+            document.body.classList.add('keyboard-open');
+            document.body.style.setProperty('--keyboard-height', '320px');
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'none';
+        });
     }
-});
+}
+document.addEventListener('DOMContentLoaded', setupFakeKeyboardSimulator);
 
 // Busca el evento de 'input' de taskSearchInput al final de app.js y cámbialo:
 document.getElementById('taskSearchInput').addEventListener('input', (e) => {
@@ -3991,6 +4272,7 @@ if (moodWidget && moodBtnEl) {
     // Expandir/Comprimir
     moodBtnEl.addEventListener('click', (e) => {
         e.stopPropagation();
+        document.getElementById('moodTooltip')?.classList.remove('show'); // Ocultar tooltip al tocar
         const isExpanded = moodWidget.classList.toggle('expanded');
         
         clearTimeout(moodWidgetTimeout);
@@ -4059,8 +4341,28 @@ function updateMoodUI() {
 }
 
 // Cargar el estado guardado al abrir la app
-document.addEventListener('DOMContentLoaded', updateMoodUI);
-updateMoodUI(); // Ejecutar inmediatamente por si el DOM ya cargó
+document.addEventListener('DOMContentLoaded', () => {
+    updateMoodUI();
+    
+    // Mostrar el globito de mensaje cada 10 segundos si está en la sección Hoy
+    setInterval(() => {
+        const todayView = document.getElementById('view-today');
+        const isTodayViewActive = todayView && (todayView.style.display === 'block' || todayView.style.display === '');
+        
+        const todayStr = getTodayStr();
+        const moods = JSON.parse(localStorage.getItem('moods') || '{}');
+        const tooltip = document.getElementById('moodTooltip');
+        const widget = document.getElementById('moodWidget');
+        const isExpanded = widget && widget.classList.contains('expanded');
+
+        if (isTodayViewActive && !moods[todayStr] && !isExpanded && tooltip) {
+            tooltip.classList.add('show');
+            setTimeout(() => tooltip.classList.remove('show'), 4000); // Se oculta después de 4s
+        }
+    }, 10000);
+});
+
+updateMoodUI();
 
 
 // --- C. LÓGICA DEL CALENDARIO ---
@@ -4221,10 +4523,10 @@ function renderCalendar() {
         // --- NUEVO: Color de fondo según el estado de ánimo ---
         if (currentMood) {
             if (currentMood === '🤩') dayDiv.classList.add('mood-amazing');
-            else if (currentMood === '😊') dayDiv.classList.add('mood-happy');
-            else if (currentMood === '😐') dayDiv.classList.add('mood-neutral');
-            else if (currentMood === '😔') dayDiv.classList.add('mood-sad');
-            else if (currentMood === '😫') dayDiv.classList.add('mood-terrible');
+            else if (currentMood === '😎') dayDiv.classList.add('mood-happy');
+            else if (currentMood === '🫠') dayDiv.classList.add('mood-neutral');
+            else if (currentMood === '🥺') dayDiv.classList.add('mood-sad');
+            else if (currentMood === '🤯') dayDiv.classList.add('mood-terrible');
         }
         
         // 1. MARCADOR: Si este día tiene tareas, añadimos el puntito visual
@@ -4810,7 +5112,7 @@ function initDynamicReminderUI() {
         </button>
 
         <div id="reminderBottomSheet" class="bottom-sheet">
-            <div class="sheet-content" style="height: auto; max-height: 85vh;">
+            <div class="sheet-content" style="height: 60svh;">
                 <div class="sheet-handle"></div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <button class="action-btn" onclick="collapseReminderBar()">
@@ -4835,7 +5137,7 @@ function initDynamicReminderUI() {
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                         </div>
                     </div>
-                <button class="btn-save-task" style="background-color: var(--accent) !important; color: #ffffff !important; border-radius: 20px; width: 56px; height: 40px; border: none; box-shadow: none;" onclick="saveDynamicReminder()">
+                <button class="btn-save-task" style="background-color: #F2994A !important; color: #ffffff !important; border-radius: 20px; width: 56px; height: 40px; border: none; box-shadow: none;" onclick="saveDynamicReminder()">
                     <svg viewBox="0 0 24 24" class="save-task-icon" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>
                 </div>
@@ -5069,8 +5371,31 @@ window.saveDynamicReminder = async () => {
             };
 
             if (intervalMatch) {
-                newHabit.repeat = { count: parseInt(intervalMatch[1]), unit: intervalMatch[2] };
-                delete newHabit.days; // Si hay intervalo, no usamos los días de la semana
+                const count = parseInt(intervalMatch[1]);
+                const unit = intervalMatch[2].toLowerCase();
+                let generatedTimes = [fullTime];
+                let currentH = horas;
+                let currentM = minutos;
+                
+                if (unit.startsWith('hora')) {
+                    for (let i = 1; i < 24 / count; i++) {
+                        currentH += count;
+                        if (currentH > 23) break;
+                        generatedTimes.push(`${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`);
+                    }
+                } else if (unit.startsWith('minuto')) {
+                    for (let i = 1; i < (24 * 60) / count; i++) {
+                        currentM += count;
+                        while (currentM >= 60) { currentM -= 60; currentH += 1; }
+                        if (currentH > 23) break;
+                        generatedTimes.push(`${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`);
+                    }
+                }
+                
+                newHabit.times = generatedTimes;
+                newHabit.days = [true, true, true, true, true, true, true]; // Todos los días
+            } else {
+                newHabit.times = [fullTime];
             }
 
             let list = JSON.parse(localStorage.getItem('reminders') || '[]');
@@ -5100,9 +5425,37 @@ window.saveDynamicReminder = async () => {
 
                 // Actualizar o quitar la repetición por intervalo
                 if (intervalMatch) {
-                    list[index].repeat = { count: parseInt(intervalMatch[1]), unit: intervalMatch[2] };
-                    delete list[index].days; // Un hábito no puede tener ambos
+                    const count = parseInt(intervalMatch[1]);
+                    const unit = intervalMatch[2].toLowerCase();
+                    let generatedTimes = [fullTime];
+                    let currentH = horas;
+                    let currentM = minutos;
+                    
+                    if (unit.startsWith('hora')) {
+                        for (let i = 1; i < 24 / count; i++) {
+                            currentH += count;
+                            if (currentH > 23) break;
+                            generatedTimes.push(`${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`);
+                        }
+                    } else if (unit.startsWith('minuto')) {
+                        for (let i = 1; i < (24 * 60) / count; i++) {
+                            currentM += count;
+                            while (currentM >= 60) { currentM -= 60; currentH += 1; }
+                            if (currentH > 23) break;
+                            generatedTimes.push(`${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`);
+                        }
+                    }
+                    
+                    list[index].times = generatedTimes;
+                    list[index].days = [true, true, true, true, true, true, true];
+                    delete list[index].repeat;
                 } else {
+                    // Si se quitó el "cada...", aseguramos que quede solo con la hora escrita
+                    if (!list[index].times || list[index].times.length <= 1) {
+                        list[index].times = [fullTime];
+                    } else {
+                        list[index].times = [fullTime];
+                    }
                     delete list[index].repeat; // Si se quitó el "cada...", volvemos a la repetición por días
                 }
 
